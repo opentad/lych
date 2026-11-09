@@ -10,9 +10,9 @@ const db=()=>window.SB;
   async function upd(p){const r=await db().from('profiles').update(p).eq('id',S.id).select('id');if(!r.error&&!(r.data||[]).length)r.error={message:'сервер не принял изменения (нет прав)'};return r}
 const SBU='https://sjwvrljmqpbopbxqkhkl.supabase.co',SBK='sb_publishable_mWqrZq0Vw65Ahk7ZIbtlNQ_owreCtcj';
 const BKT='avatars',VIEW=300,CR=130,OUT=800,MAXP=8,MAXO=10;
-const PS1='id,body,image_url,images,img_top,poll,created_at,post_likes(count),post_comments(count)';
+const PS1='id,body,image_url,images,img_top,poll,repost_of,created_at,post_likes(count),post_comments(count)';
 const PS0='id,body,image_url,created_at,post_likes(count),post_comments(count)';
-const PSEL='id,body,image_url,images,img_top,poll,created_at';
+const PSEL='id,body,image_url,images,img_top,poll,repost_of,created_at';
 
 function getSB(){return new Promise(res=>{let n=0;const t=setInterval(()=>{
   if(!window.SB&&window.supabase)window.SB=window.supabase.createClient(SBU,SBK);
@@ -48,6 +48,10 @@ IC.plus='M12 5v14M5 12h14';
 IC.poll='M6 19v-7M12 19V5M18 19v-10';
 IC.chk='M5 12.5l4.5 4.5L19 7.5';
 IC.x='M6 6l12 12M18 6L6 18';
+IC.rep='M17 3l3 3-3 3M4 11V9a3 3 0 0 1 3-3h13M7 21l-3-3 3-3M20 13v2a3 3 0 0 1-3 3H4';
+IC.flag='M6 4v16M6 5h11l-2 4 2 4H6';
+/* иконка для меню «три точки» (самодостаточная, не зависит от CSS) */
+const icm=k=>`<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:8px;vertical-align:-4px"><path d="${IC[k]}"/></svg>`;
 let nt=0;
 function note(t){const d=$('#pf-nt');d.textContent=t;d.hidden=false;clearTimeout(nt);nt=setTimeout(()=>d.hidden=true,4000)}
 const setHash=k=>{try{history.replaceState(null,'','#/@'+encodeURIComponent(k))}catch(e){}};
@@ -206,12 +210,25 @@ if(urls.length){
     SB.from('follows').select('follower').eq('followee',id).limit(6),
     SB.from('follows').select('followee').eq('follower',id).limit(6)]);
   if(tk!==tok)return;
-  if(ps.error&&/images|img_top|poll|column/i.test(ps.error.message)){
+  if(ps.error&&/images|img_top|poll|repost|column/i.test(ps.error.message)){
     ps=await SB.from('posts').select(PS0).eq('user_id',id).order('created_at',{ascending:false}).limit(50);
     if(tk!==tok)return;
   }
   if(ps.error){put('<div class="pf-x pf-em">Не удалось загрузить: '+esc(ps.error.message)+'</div>');return}
   const ids=ps.data.map(x=>x.id),pids=ps.data.filter(x=>x.poll).map(x=>x.id),fol=(fo.data||[]).map(x=>x.follower),sub=(su.data||[]).map(x=>x.followee),all=[...new Set([...fol,...sub])];
+  /* оригиналы пересланных постов и счётчики пересылок */
+  const rids=[...new Set(ps.data.map(x=>x.repost_of).filter(Boolean))],ORG={},RC={};
+  if(rids.length){
+    const o=await SB.from('posts').select('id,user_id,body,image_url,images,img_top,created_at').in('id',rids);
+    const od=o.data||[],ou=[...new Set(od.map(z=>z.user_id))];
+    const op=ou.length?await SB.from('profiles').select('id,name,fio,avatar_url').in('id',ou):null;
+    const PM=Object.fromEntries(((op&&op.data)||[]).map(z=>[z.id,z]));
+    od.forEach(z=>{z.au=PM[z.user_id]||{name:'Участник'};ORG[z.id]=z});
+  }
+  const cids=[...new Set([...ids,...rids])];
+  const rcq=cids.length?await SB.from('posts').select('repost_of').in('repost_of',cids):null;
+  ((rcq&&rcq.data)||[]).forEach(z=>{RC[z.repost_of]=(RC[z.repost_of]||0)+1});
+  if(tk!==tok)return;
   const [lk,nm,,vt]=await Promise.all([
     ids.length?SB.from('post_likes').select('post_id').eq('user_id',me.id).in('post_id',ids):null,
     all.length?SB.from('profiles').select('id,name,avatar_url').in('id',all):null,
@@ -223,7 +240,7 @@ if(urls.length){
   ((vt&&vt.data)||[]).forEach(z=>{const o=PV[z.post_id]=PV[z.post_id]||{c:{},u:new Set(),mine:[]};o.c[z.opt]=(o.c[z.opt]||0)+1;o.u.add(z.user_id);if(z.user_id===me.id)o.mine.push(z.opt)});
   S={me,id,mine,p:pr.data,np:np.count||0,nf:nf.count||0,ng:ng.count||0,fw:!!(fw&&fw.data),posts:ps.data,
      liked:new Set(((lk&&lk.data)||[]).map(x=>x.post_id)),fol:fol.map(i=>M[i]).filter(Boolean),sub:sub.map(i=>M[i]).filter(Boolean),
-     ed:false,dsg:false,dk:'status',purchasesList:[],ev:{},fm:{},draft:'',cd:null,crop:null,pimgs:[],pTop:false,poll:null,pollP:false,plus:false,pv:PV,sel:{},bk:undefined};
+     ed:false,dsg:false,dk:'status',purchasesList:[],ev:{},fm:{},draft:'',cd:null,crop:null,pimgs:[],pTop:false,poll:null,pollP:false,plus:false,pv:PV,sel:{},orig:ORG,rc:RC,rp:null,rpt:'',bk:undefined};
   setHash(pr.data.nick||id);
   draw();
   loadBk();
@@ -365,7 +382,7 @@ css2.textContent=`
 @media(max-width:1100px){.pfo-g,.pfo-g.nb{grid-template-columns:1fr;grid-template-areas:"lf" "bn" "rt" "ps"}.pfo-av{max-width:240px}}`;
 document.head.appendChild(css2);
 
-/* ===== Публикации: фото (до 8), опросы и викторины ===== */
+/* ===== Публикации: фото (до 8), опросы и викторины, пересылка ===== */
 const css4=document.createElement('style');
 css4.textContent=`
 .pf-comp .r{justify-content:space-between;align-items:center}
@@ -407,6 +424,16 @@ css4.textContent=`
 .pf-gl.n1{grid-template-columns:1fr}
 .pf-gl.n1 img{height:auto;max-height:520px}
 .pf-gl.od img:first-child{grid-column:1/-1;height:260px}
+.pf-ob{margin-top:10px;border:1px solid var(--pln);background:var(--c2);border-radius:18px;padding:12px}
+.pf-obh{display:flex;gap:10px;align-items:center;width:100%;background:transparent;border:0;padding:0;margin-bottom:8px;text-align:left;cursor:pointer;color:var(--ptx);font:inherit}
+.pf-obh .pf-a{width:34px;height:34px;font-size:12px}
+.pf-obh b{display:block;font-size:14px}
+.pf-obh small{color:var(--pmu);font-size:11.5px}
+.pf-ob p{font-size:14.5px}
+.pf-ob .pf-gl{margin:8px 0 0}
+.pf-rpb{margin-top:12px;padding-top:12px;border-top:1px solid var(--pln)}
+.pf-rpb textarea{width:100%;height:70px;resize:none;background:var(--c2);border:0;border-radius:14px;padding:12px;font:inherit;outline:0;color:var(--ptx)}
+.pf-rpb .r{display:flex;justify-content:flex-end;gap:10px;margin-top:8px;flex-wrap:wrap}
 .pf-po{margin-top:12px;display:grid;gap:8px}
 .pf-po-q{font-weight:800;color:var(--ptx);overflow-wrap:anywhere}
 .pf-po-o,.pf-po-r{position:relative;display:flex;align-items:center;gap:10px;min-height:44px;padding:10px 14px;border-radius:14px;background:var(--c2);border:1px solid var(--pln);color:var(--ptx);font:inherit;text-align:left;overflow:hidden;width:100%}
@@ -463,6 +490,13 @@ function galHtml(x){
   return `<div class="pf-gl n${n}${n>1&&n%2?' od':''}">${u.map((s,i)=>`<img src="${esc(s)}" alt="" loading="lazy" data-gal="${x.id}" data-gi="${i}">`).join('')}</div>`;
 }
 
+/* вставленный (пересланный) пост: фото сверху/снизу как в оригинале */
+function origHtml(o){
+  if(!o)return `<div class="pf-ob pf-mu">Публикация недоступна</div>`;
+  const au=o.au||{name:'Участник'},tx=o.body.trim()?`<p>${esc(o.body)}</p>`:'',g=galHtml(o);
+  return `<div class="pf-ob"><button class="pf-obh" data-open="${o.user_id}">${av(au,'pf-a')}<span><b>${esc(au.name)}</b>${au.fio?`<span class="pf-fio">${esc(SF(au.fio))}</span>`:''}<small>${dt(o.created_at)}</small></span></button>${o.img_top?g+tx:tx+g}</div>`;
+}
+
 function pollHtml(x){
   const q=x.poll;if(!q||!q.o)return '';
   const v=S.pv[x.id]||{c:{},u:new Set(),mine:[]},done=v.mine.length>0,n=v.u.size,quiz=!!q.quiz,max=quiz?1:(q.m||1),sel=S.sel[x.id]||[];
@@ -513,17 +547,24 @@ function openGal(urls,i0){
 function feedHtml(shown){
   const {p,mine}=S;
   return `${mine?composerHtml():''}
-  ${S.posts.map(x=>{const top=!!x.img_top,g=galHtml(x),tx=x.body.trim()?`<p>${esc(x.body)}</p>`:'';return `<article class="pf-x pf-p"><div class="pf-ph">${av(p,'pf-a')}<div style="flex:1;min-width:0"><b>${esc(shown)}</b>${p.fio?`<span class="pf-fio">${esc(SF(p.fio))}</span>`:''}</div><small class="pf-tm">${dt(x.created_at)}</small>${CMT.dots((mine?'':`<button data-pm="${x.id}">Пожаловаться</button>`)+(mine||CMT.mod()?`<button data-del="${x.id}" data-danger>${delArm===x.id?'Точно удалить?':'Удалить'}</button>`:''))}</div>${top?g+tx:tx+g}${pollHtml(x)}
-   <div class="pf-ac"><button data-like="${x.id}" class="${S.liked.has(x.id)?'on':''}">${ic('heart')}${cn(x.post_likes)}</button><button disabled>${ic('cmt')}${CMT.n(x.id)}</button></div>${CMT.html(x.id,S.id,S.p.comments_off)}</article>`}).join('')||`<div class="pf-x pf-em">${mine?'Публикаций пока нет. Напиши первую выше.':'Публикаций пока нет.'}</div>`}`;
+  ${S.posts.map(x=>{
+    const top=!!x.img_top,g=galHtml(x),tx=x.body.trim()?`<p>${esc(x.body)}</p>`:'';
+    const body=x.repost_of?tx+origHtml(S.orig[x.repost_of]):(top?g+tx:tx+g);
+    const rpn=S.rc[x.repost_of||x.id]||0;
+    const menuBtns=(mine?'':`<button data-pm="${x.id}">${icm('flag')}Пожаловаться</button>`)+`<button data-rp="${x.id}">${icm('rep')}Переслать на свою страницу</button>`+(mine||CMT.mod()?`<button data-del="${x.id}" data-danger>${icm('trash')}${delArm===x.id?'Точно удалить?':'Удалить'}</button>`:'');
+    const rpb=S.rp===x.id?`<div class="pf-rpb"><textarea id="pf-rt" maxlength="2000" placeholder="Добавь свой текст (необязательно)">${esc(S.rpt)}</textarea><div class="r"><button class="pf-b g sm" data-rpx>Отмена</button><button class="pf-b sm" data-rpgo="${x.id}">Переслать на свою страницу</button></div></div>`:'';
+    return `<article class="pf-x pf-p"><div class="pf-ph">${av(p,'pf-a')}<div style="flex:1;min-width:0"><b>${esc(shown)}</b>${p.fio?`<span class="pf-fio">${esc(SF(p.fio))}</span>`:''}</div><small class="pf-tm">${dt(x.created_at)}</small>${CMT.dots(menuBtns)}</div>${body}${pollHtml(x)}
+   <div class="pf-ac"><button data-like="${x.id}" class="${S.liked.has(x.id)?'on':''}">${ic('heart')}${cn(x.post_likes)}</button><button disabled>${ic('cmt')}${CMT.n(x.id)}</button><button data-rp="${x.id}" class="${S.rp===x.id?'on':''}" aria-label="Переслать">${ic('rep')}${rpn}</button></div>${rpb}${CMT.html(x.id,S.id,S.p.comments_off)}</article>`}).join('')||`<div class="pf-x pf-em">${mine?'Публикаций пока нет. Напиши первую выше.':'Публикаций пока нет.'}</div>`}`;
 }
 
 function drawOld(){
   const ta=$('#pf-t');if(ta)S.draft=ta.value;
+  const rt=$('#pf-rt');if(rt)S.rpt=rt.value;
   sec.querySelectorAll('[data-k]').forEach(i=>S.ev[i.dataset.k]=i.value);
   const {p,mine}=S,tags=(p.tags||[]).filter(Boolean),sn=mine?'В сети':seen(p.last_seen),shown=p.name,sq=p.ava_square?' sq':'';
   const grp=(t,a,n)=>`<div class="pf-x"><div class="pf-sh"><h3>${t} (${n})</h3></div><div class="pfo-pe">${a.slice(0,3).map(u=>`<button class="pfo-pu" data-open="${u.id}">${av(u,'pf-a')}<small>${esc(u.name)}</small></button>`).join('')||'<small class="pf-mu">Пока никого</small>'}</div></div>`;
   put(`<div class="pfo">
-  <div class="pfo-t"><h2>${esc(shown)}</h2>${mine?'':CMT.dots('<button data-pacc>Пожаловаться на аккаунт</button>'+(CMT.mod()&&window.MOD?'<button data-pmore data-danger>Модерация</button>':''))}</div>
+  <div class="pfo-t"><h2>${esc(shown)}</h2>${mine?'':CMT.dots(`<button data-pacc>${icm('flag')}Пожаловаться на аккаунт</button>`+(CMT.mod()&&window.MOD?'<button data-pmore data-danger>Модерация</button>':''))}</div>
   ${mine&&S.crop?cropHtml():''}${mine&&S.ed?editHtml():''}${mine&&S.dsg?designHtml():''}
   <div class="pfo-g${p.cover_url?'':' nb'}">
    <div class="pfo-lf">
@@ -547,6 +588,7 @@ function drawOld(){
 function draw(){
   if(OLD()){drawOld();return}
   const ta=$('#pf-t');if(ta)S.draft=ta.value;
+  const rt=$('#pf-rt');if(rt)S.rpt=rt.value;
   sec.querySelectorAll('[data-k]').forEach(i=>S.ev[i.dataset.k]=i.value);
   const {p,mine}=S,tags=(p.tags||[]).filter(Boolean),sn=mine?'В сети':seen(p.last_seen);
   const btns=mine?`<button class="pf-b" data-edit>${ic('pen')}Редактировать профиль</button>`:
@@ -556,7 +598,7 @@ function draw(){
   const menu=mine?`<aside><div class="pf-x pf-mn"><button class="pf-mi" data-open-dsg>${ic('paint')}<span>Оформление</span></button><button class="pf-mi on" data-edit>${ic('pen')}<span>Редактировать профиль</span></button>${mi('mark','Сохранённое')}${mi('gift','Подарки')}</div></aside>`:'';
   
   put(`<div class="pf-cv${p.cover_url?' img':''}"${p.cover_url?` style="background-image:url('${esc(p.cover_url)}')"`:''}></div>
-  <div class="pf-hd">${mine?'':CMT.dots('<button data-pacc>Пожаловаться на аккаунт</button>'+(CMT.mod()&&window.MOD?'<button data-pmore data-danger>Модерация</button>':''))}<div class="pf-ava"><span class="pf-big${mine?' pf-me':''}${p.ava_square?' sq':''}"${mine?' data-ava role="button" aria-label="Сменить фото"':''} style="background-color:${col(p.name)};${p.avatar_url?`background-image:url('${esc(p.avatar_url)}')`:''}">${p.avatar_url?'':esc(ini(shown))}</span>${p.plate_url?`<img class="pf-pl" src="${esc(p.plate_url)}" alt="">`:''}</div>
+  <div class="pf-hd">${mine?'':CMT.dots(`<button data-pacc>${icm('flag')}Пожаловаться на аккаунт</button>`+(CMT.mod()&&window.MOD?'<button data-pmore data-danger>Модерация</button>':''))}<div class="pf-ava"><span class="pf-big${mine?' pf-me':''}${p.ava_square?' sq':''}"${mine?' data-ava role="button" aria-label="Сменить фото"':''} style="background-color:${col(p.name)};${p.avatar_url?`background-image:url('${esc(p.avatar_url)}')`:''}">${p.avatar_url?'':esc(ini(shown))}</span>${p.plate_url?`<img class="pf-pl" src="${esc(p.plate_url)}" alt="">`:''}</div>
    <div class="pf-w"><h2>${esc(shown)}</h2>${p.fio?`<span class="pf-fio">${esc(SF(p.fio))}</span>`:''}<div class="pf-nk"><span>${nick}</span>${sn?`<span class="pf-bd">${sn}</span>`:''}</div>
     <div class="pf-st">${p.status?esc(p.status):''}</div>${tags.length?`<div class="pf-tg">${tags.map(t=>`<span>${esc(t)}</span>`).join('')}</div>`:''}</div>
    <div class="pf-sc"><div class="pf-ss pf-ss2"><div data-tabgo="1"><b>${S.np}</b><small>публикаций</small></div><div data-flw="fol"><b>${S.nf}</b><small>подписчиков</small></div><div data-flw="sub"><b>${S.ng}</b><small>подписок</small></div></div><div class="pf-bs">${btns}</div></div></div>
@@ -793,7 +835,23 @@ async function act(e){
   if(t.id==='pfDsg'){S.dsg=false;draw();return}
   if(S&&S.plus&&!b('.pf-pm')&&!b('[data-plus]')){S.plus=false;const m=$('.pf-pm');if(m)m.remove()}
   if(b('[data-go]'))MS.show('msg');
-  else if((x=b('[data-gal]'))){const p=S.posts.find(z=>z.id==x.dataset.gal);if(p)openGal(postImgs(p),+x.dataset.gi)}
+  else if((x=b('[data-gal]'))){const p=S.posts.find(z=>z.id==x.dataset.gal)||S.orig[x.dataset.gal];if(p)openGal(postImgs(p),+x.dataset.gi)}
+  else if(b('[data-rpx]')){S.rp=null;S.rpt='';draw()}
+  else if((x=b('[data-rpgo]'))){
+    const id=+x.dataset.rpgo,p=S.posts.find(z=>z.id===id);if(!p)return;
+    const tgt=p.repost_of||p.id,ta=$('#pf-rt'),body=ta?ta.value.trim():'';
+    x.disabled=true;x.textContent='Пересылаем…';
+    const r=await SB.from('posts').insert({body:body||' ',repost_of:tgt}).select(PSEL).single();
+    if(r.error){draw();note(/column|repost/i.test(r.error.message)?'Сначала выполни SQL для пересылки в Supabase':'Не получилось: '+r.error.message);return}
+    S.rp=null;S.rpt='';
+    S.rc[tgt]=(S.rc[tgt]||0)+1;
+    if(S.mine){
+      if(!S.orig[tgt])S.orig[tgt]={...p,au:S.p};
+      S.posts.unshift({...r.data,post_likes:[{count:0}],post_comments:[{count:0}]});S.np++;
+    }
+    draw();note('Переслано на вашу страницу');
+  }
+  else if((x=b('[data-rp]'))){const id=+x.dataset.rp;S.rp=S.rp===id?null:id;S.rpt='';draw()}
   else if(b('[data-plus]')){S.plus=!S.plus;draw()}
   else if(b('[data-pph]')){
     S.plus=false;const m=$('.pf-pm');if(m)m.remove();
@@ -956,7 +1014,7 @@ async function act(e){
     if(r.error||!r.data.length){draw();note('Не удалось удалить');return}
     const fps=pp?postImgs(pp).map(u=>decodeURIComponent((u.split('/posts/')[1]||'').split('?')[0])).filter(Boolean):[];
     if(fps.length)SB.storage.from('posts').remove(fps);
-    S.posts=S.posts.filter(z=>z.id!==id);S.np--;draw();
+    S.posts=S.posts.filter(z=>z.id!==id&&z.repost_of!==id);S.np=S.posts.length>=S.np?S.np:S.np;S.np--;draw();
   }
 }
 sec.addEventListener('click',act);
