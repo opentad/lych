@@ -1,4 +1,4 @@
-/* MilkOffice: вкладки Главная / Финансы / Команда / Бизнесы (модераторам) / Вакансии / Инструменты (всем) */
+/* MilkOffice: вкладки Главная / Финансы / Команда / Бизнесы (модераторам) / Вакансии / Студия / Инструменты (всем) */
 (function(){
 /* Размер панели Милки. 0 = определить само. Если будет зазор или наезд, впиши числа в пикселях:
    PANEL_W: ширина боковой панели (компьютер), PANEL_H: высота верхней панели (телефон) */
@@ -75,6 +75,14 @@ st.textContent=`
 .ou-row{display:flex;gap:18px;flex-wrap:wrap;margin-top:8px}
 .ou-cv{flex:none;width:110px;aspect-ratio:9/16;border-radius:14px;background:#eaf6fd center top/cover}
 .ou-f{flex:1;min-width:220px}.ou-f input[type=range]{width:100%;margin:6px 0}
+.ofs{display:grid;grid-template-columns:3fr 2fr;gap:14px;margin-bottom:14px}
+@media(max-width:700px){.ofs{grid-template-columns:1fr}}
+.ofs-c{display:flex;flex-direction:column;justify-content:flex-end;gap:6px;text-align:left;min-height:120px;padding:20px;border-radius:22px;border:0;cursor:pointer;background:rgba(255,255,255,.8);color:#34404e;box-shadow:0 6px 30px rgba(0,0,0,.04)}
+.ofs-c.big{min-height:170px;background:linear-gradient(135deg,#d7f3fc,#e6defa)}
+.ofs-c h3{font-size:20px;font-weight:800;margin:0;overflow-wrap:anywhere}
+.ofs-c.big h3{font-size:24px}
+.ofs-c span{font-size:13px;color:#566170}
+.ofs-c em{font-style:normal;font-size:12.5px;font-weight:700;color:#2fa876}
 @media(max-width:700px){.obh-cv{height:120px}.obh-av{width:92px;height:92px;margin-top:-40px;font-size:30px}.obh-bd{padding:0 16px 18px;gap:14px}.obh-w h2{font-size:20px}}`;
 document.head.appendChild(st);
 
@@ -99,7 +107,7 @@ const KIND=k=>({npd:'ИП на НПД',ip:'ИП',ooo:'ООО'})[String(k||'').to
 const lk=b=>String(b&&b.kind||'').toLowerCase();
 const canHire=b=>!!b&&lk(b)!=='npd';
 const norm=o=>{if(o){o.staff=o.staff||[];o.offers=o.offers||[];o.founds=o.founds||[]}return o};
-let O=null,tab='jobs',FB=null,applyFor=null,view=null,qAll='',fineFor=null,stF='act';
+let O=null,tab='jobs',FB=null,applyFor=null,view=null,qAll='',fineFor=null,stF='act',SC=null,UPB=null;
 const R=async(n,a)=>{const r=await window.SB.rpc(n,a||{});if(r.error)throw r.error;return r.data};
 const say=(t,bad)=>{const m=$('#of-m');if(m){m.textContent=t||'';m.className='of-m'+(bad?' e':'')}};
 const own=()=>O&&O.own&&O.own.status==='active'?O.own:null;
@@ -115,7 +123,7 @@ const tabs=()=>{
   if(O.mod)t.push(['all','Бизнесы']);
   t.push(['jobs','Вакансии']);
   t.push(['cos','Компании']);
-  if(postBiz())t.push(['fm','FreshMilk']);
+  t.push(['fm','Студия']);
   t.push(['tools','Инструменты']);
   return t;
 };
@@ -140,7 +148,7 @@ async function show(){
   }catch(e){b.innerHTML='';say(e.message||'Не получилось',1)}
 }
 
-/* ---------- Страница компании: шапка, публикации, FreshMilk ---------- */
+/* ---------- Страница компании: шапка, публикации, Fresh ---------- */
 const okImg=u=>/^data:image\/jpeg;base64,[A-Za-z0-9+\/=]+$/.test(u||'')?u:'';
 const PL=['#17b3e6','#8774e1','#e5617a','#5cc08a','#f0a04b','#4a8fd9'];
 const hue=t=>{let x=7;for(const c of String(t))x=(x*31+c.charCodeAt(0))>>>0;return PL[x%PL.length]};
@@ -194,7 +202,7 @@ function shrink(f,max){
   });
 }
 function pick(cb){const i=document.createElement('input');i.type='file';i.accept='image/*';i.onchange=()=>{if(i.files[0])cb(i.files[0])};i.click()}
-/* видео (как в FreshMilk) */
+/* видео (как в Fresh) */
 const probe=f=>new Promise((ok,no)=>{const v=document.createElement('video'),u=URL.createObjectURL(f);v.preload='auto';v.muted=true;v.playsInline=true;const t=setTimeout(()=>{URL.revokeObjectURL(u);no()},8000);v.onloadedmetadata=()=>{clearTimeout(t);ok({v,u,dur:v.duration,w:v.videoWidth,h:v.videoHeight})};v.onerror=()=>{clearTimeout(t);URL.revokeObjectURL(u);no()};v.src=u});
 const shot=(src,w,h)=>{const k=Math.min(1,640/Math.max(w,h)),c=document.createElement('canvas');c.width=Math.round(w*k);c.height=Math.round(h*k);c.getContext('2d').drawImage(src,0,0,c.width,c.height);return c.toDataURL('image/jpeg',.72)};
 const frame=(v,t)=>new Promise(ok=>{let d=false;const fin=()=>{if(!d){d=true;ok(shot(v,v.videoWidth,v.videoHeight))}};v.addEventListener('seeked',fin,{once:true});setTimeout(fin,2500);v.currentTime=t});
@@ -206,7 +214,7 @@ async function home(){
   if(O.offers.length)h+='<div class="ofp"><h3>Вам предлагают долю</h3>'+O.offers.map(f=>`<div class="of-r" style="display:block"><b>${esc(f.name)}</b><small>${esc(f.from_name||'Игрок')} отдаёт вам ${f.share}% ${f.price>0?'за '+mk(f.price):'бесплатно'}. Вы станете сооснователем.</small><div class="of-bt"><button data-oa="offyes" data-id="${f.id}">Принять</button><button class="g" data-oa="offno" data-id="${f.id}">Отказаться</button></div></div>`).join('')+'</div>';
   if(o){
     h+=`<div class="ofp"><h3>${esc(o.name)} <span class="of-tag">${esc(KIND(o.kind))}</span></h3><p class="of-p">Баланс счёта: ${mk(o.balance)}.${lk(o)==='npd'?' Сотрудников нанимать нельзя.':''}</p></div>`;
-    if(o.frozen)h+=`<div class="ofp of-wn">Счёт заморожен: не хватает денег на взнос, зарплату или штраф.${o.debt>0?' Штраф: '+mk(o.debt)+(o.debt_note?' ('+esc(o.debt_note)+')':'')+'.':''} Пополни счёт в MilkBank.${lk(o)==='ooo'?' Если долги не оплатить 30 дней, компания закроется.':''}</div>`;
+    if(o.frozen)h+=`<div class="ofp of-wn">Счёт заморожен: не хватает денег на взнос, зарплату или штраф.${o.debt>0?' Штраф: '+mk(o.debt)+(o.debt_note?' ('+esc(o.debt_note)+')':'')+'.':''} Пополни счёт в Банке.${lk(o)==='ooo'?' Если долги не оплатить 30 дней, компания закроется.':''}</div>`;
     const bl=await getBlog(o.id);
     if(bl)h+=blogHead(o.id,bl,KIND(o.kind),await pageStats(o.id),true,o.name);
     else h+=`<div class="ofp"><h3>Страница компании</h3><p class="of-p">Страница получит название вашего бизнеса: «${esc(o.name)}». Название потом не меняется.</p><div class="of-bt"><button data-oa="blogmk">Создать страницу</button></div></div>`;
@@ -263,7 +271,7 @@ async function blogView(bid,name){
   if(!b0){box.innerHTML='<button class="back" data-oa="back">← Назад</button><div class="ofp"><h3>'+esc(name)+'</h3><p class="of-p">Страницы пока нет.</p></div>';return}
   const me=await getUser(),st=await pageStats(bid),can=canPost(bid);
   const sf=O.staff.find(s=>s.biz_id===bid),kd=own()&&own().id===bid?own().kind:(sf?sf.kind:''),kind=kd?KIND(kd):'';
-  const tb='<div class="obt">'+[['posts','Публикации'],['fm','FreshMilk']].map(([k,l])=>`<button data-oa="pgt" data-k="${k}" class="${pg===k?'on':''}">${l}</button>`).join('')+'</div>';
+  const tb='<div class="obt">'+[['posts','Публикации'],['fm','Fresh']].map(([k,l])=>`<button data-oa="pgt" data-k="${k}" class="${pg===k?'on':''}">${l}</button>`).join('')+'</div>';
   const body=pg==='fm'?await pageFlashes(bid,can):await pagePosts(bid,b0,kind,can,me);
   box.innerHTML='<button class="back" data-oa="back">← Назад</button>'+blogHead(bid,b0,kind,st,false,name)+tb+body;
   if(pg==='posts'&&PD){const t=$('#of-pt');if(t)t.value=PD}
@@ -279,12 +287,12 @@ async function companies(){
     :'<div class="of-em">Страниц компаний пока нет</div>';
 }
 
-/* ---------- FreshMilk: студия компании ---------- */
-const UPFORM=`<div class="ofp" id="ou" hidden><small class="ou-rules">До 60 секунд, до 25 МБ, вертикальное или квадратное, не выше 720p, mp4 или mov. Один Flash в сутки. Чтобы видео прошло, сними его в HD (720p).</small><div class="of-m e" id="ou-lim"></div><label class="ofl" id="ou-vl">Выбрать видео<input type="file" id="ou-vf" accept="video/mp4,video/quicktime,.mp4,.mov" hidden></label><div class="of-p" id="ou-info"></div><div class="of-m e" id="ou-e"></div><div id="ou-form" hidden><div class="ou-row"><div class="ou-cv" id="ou-cvi"></div><div class="ou-f"><small>Обложка: выбери кадр или свою картинку</small><input type="range" id="ou-sl" min="0" max="1" step="0.1" value="0"><label class="ofl">Своя картинка<input type="file" id="ou-cf" accept="image/*" hidden></label><input class="of-in" id="ou-ti" maxlength="100" placeholder="Название"><textarea id="ou-de" maxlength="1000" placeholder="Описание"></textarea><input class="of-in" id="ou-tg" placeholder="#хэштеги, до 10"></div></div></div><div class="of-bt"><button id="ou-pub" disabled>Опубликовать</button><button class="g" id="ou-cn">Отмена</button></div></div>`;
+/* ---------- Студия Fresh: загрузка видео и статистика (личная и корпоративная) ---------- */
+const upForm=bid=>`<div class="ofp" id="ou" hidden><small class="ou-rules">До 60 секунд, до 25 МБ, вертикальное или квадратное, не выше 720p, mp4 или mov. ${bid?'Один Flash в сутки':'Два Flash в сутки'}. Чтобы видео прошло, сними его в HD (720p).</small><div class="of-m e" id="ou-lim"></div><label class="ofl" id="ou-vl">Выбрать видео<input type="file" id="ou-vf" accept="video/mp4,video/quicktime,.mp4,.mov" hidden></label><div class="of-p" id="ou-info"></div><div class="of-m e" id="ou-e"></div><div id="ou-form" hidden><div class="ou-row"><div class="ou-cv" id="ou-cvi"></div><div class="ou-f"><small>Обложка: выбери кадр или свою картинку</small><input type="range" id="ou-sl" min="0" max="1" step="0.1" value="0"><label class="ofl">Своя картинка<input type="file" id="ou-cf" accept="image/*" hidden></label><input class="of-in" id="ou-ti" maxlength="100" placeholder="Название"><textarea id="ou-de" maxlength="1000" placeholder="Описание"></textarea><input class="of-in" id="ou-tg" placeholder="#хэштеги, до 10"></div></div></div><div class="of-bt"><button id="ou-pub" disabled>Опубликовать</button><button class="g" id="ou-cn">Отмена</button></div></div>`;
 async function upLimit(){
   const l=document.getElementById('ou-lim'),v=document.getElementById('ou-vl');if(!l)return;
   l.textContent='';v.hidden=false;
-  try{const left=Number(await R('flash_wait'))||0;if(left>0){const t=Math.ceil(left/60),h=Math.floor(t/60);l.textContent='Один Flash в сутки. Следующий можно загрузить через '+(h?h+' ч '+(t%60)+' мин':t+' мин')+'.';v.hidden=true}}catch(e){}
+  try{const left=Number(await R('flash_wait'))||0;if(left>0){const t=Math.ceil(left/60),h=Math.floor(t/60);l.textContent=(UPB?'Один':'Два')+' Flash в сутки. Следующий можно загрузить через '+(h?h+' ч '+(t%60)+' мин':t+' мин')+'.';v.hidden=true}}catch(e){}
 }
 function initUp(bid){
   const g=id=>document.getElementById(id);let P=null,cover='',busy=false;
@@ -325,32 +333,60 @@ function initUp(bid){
       if(up.error){let m='Не удалось загрузить видео. Проверь интернет и попробуй ещё раз.';try{const j=await up.error.context.json();if(j&&j.error)m=j.error}catch(x){}return fail(m)}
       const url=up.data&&up.data.url;
       if(!url||!/^https:\/\/[a-z0-9-]+\.github\.io\//i.test(url))return fail('Сервер вернул странный ответ. Попробуй ещё раз.');
-      await R('biz_flash_make',{p_bid:bid,p_title:title,p_desc:desc,p_tags:tags,p_url:url,p_cover:cover,p_dur:P.dur,p_w:P.w,p_h:P.h,p_size:P.f.size});
+      if(bid)await R('biz_flash_make',{p_bid:bid,p_title:title,p_desc:desc,p_tags:tags,p_url:url,p_cover:cover,p_dur:P.dur,p_w:P.w,p_h:P.h,p_size:P.f.size});
+      else{
+        const ins=await window.SB.from('flashes').insert({author:window.ME_NAME||'Участник',title,description:desc,tags,url,cover,dur:P.dur,w:P.w,h:P.h,size:P.f.size});
+        if(ins.error)throw new Error('Видео загружено, но запись не сохранилась. Сообщи об этом.');
+      }
     }catch(x){return fail((x&&x.message)||'Что-то пошло не так.')}
     busy=false;say('Flash опубликован. Видео заработает по ссылке через 1–2 минуты.');show();
   };
 }
+
+const FC='id,title,dur,views,likes,created_at';
+const sum=(a,f)=>a.reduce((s,x)=>s+(+f(x)||0),0);
+const earn=a=>a.reduce((s,x)=>s+Math.floor((+x.views||0)/20),0);
+const pcn=(a,b)=>b?(a/b*100).toFixed(1).replace('.',',')+'%':'0%';
+const scard=(t,v)=>`<div class="ofp"><small>${t}</small><b>${v}</b></div>`;
 async function studio(){
-  const m=postBiz(),box=$('#of-b');
-  if(!m){box.innerHTML='<div class="of-em">Нет доступа</div>';return}
-  const SB=window.SB,bid=m.id,bl=await getBlog(bid);
-  if(!bl){box.innerHTML='<div class="ofp"><p class="of-p">Сначала создай страницу компании на вкладке «Главная».</p></div>';return}
-  const [fl,ps,fw]=await Promise.all([
-    SB.from('flashes').select('id,title,dur,views,likes,created_at').eq('biz_id',bid).order('created_at',{ascending:false}).limit(100),
-    SB.from('posts').select('id,body,created_at,post_likes(count),post_comments(count)').eq('biz_id',bid).order('created_at',{ascending:false}).limit(100),
-    SB.from('biz_follows').select('created_at').eq('biz_id',bid).limit(5000)]);
-  const F=fl.data||[],Pp=ps.data||[],W=fw.data||[],fc={};
+  const box=$('#of-b'),SB=window.SB,u=await getUser();
+  if(!u){box.innerHTML='<div class="of-em">Чтобы открыть студию, войди в аккаунт.</div>';return}
+  /* монетизация: 1 монета за 20 просмотров. Личные Flashes: на личный счёт, корпоративные: на счёт компании */
+  try{const c=await R('flash_collect');if(c&&(c.coins>0||c.biz>0)){say((c.coins>0?'Начислено '+c.coins+' мк на личный счёт в Банке. ':'')+(c.biz>0?'На счёт компании начислено '+c.biz+' мк.':''));if(c.biz>0)O=norm(await R('biz_office'));if(window.COIN)COIN.sync()}}catch(e){}
+  const m=postBiz(),bl=m?await getBlog(m.id):null,biz=bl?{id:m.id,title:bl.title}:null;
+  const mr=await SB.from('flashes').select(FC).eq('user_id',u.id).is('biz_id',null).order('created_at',{ascending:false}).limit(100);
+  const ML=mr.data||[],both=!!biz&&ML.length>0;
+  const sc=both?SC:(biz?'biz':'me');
+  /* есть и личный, и корпоративный Fresh: сетка из двух пунктов, личный больше и первый */
+  if(!sc){
+    const br=await SB.from('flashes').select('views').eq('biz_id',biz.id).limit(1000),BL=br.data||[];
+    const one=(k,t,L,big)=>`<button class="ofs-c${big?' big':''}" data-oa="sc" data-k="${k}"><h3>${esc(t)}</h3><span>${L.length} Flashes · ${sum(L,x=>x.views)} просмотров</span><em>Заработано: ${mk(earn(L))}</em></button>`;
+    box.innerHTML='<div class="ofs">'+one('me','Личный Fresh',ML,1)+one('biz',biz.title,BL,0)+'</div>';
+    return;
+  }
+  const isB=sc==='biz',bid=isB?biz.id:null;
+  UPB=bid;
+  let F=ML,Pp=[],W=[];
+  if(isB){
+    const [fl,ps,fw]=await Promise.all([
+      SB.from('flashes').select(FC).eq('biz_id',bid).order('created_at',{ascending:false}).limit(100),
+      SB.from('posts').select('id,body,created_at,post_likes(count),post_comments(count)').eq('biz_id',bid).order('created_at',{ascending:false}).limit(100),
+      SB.from('biz_follows').select('created_at').eq('biz_id',bid).limit(5000)]);
+    F=fl.data||[];Pp=ps.data||[];W=fw.data||[];
+  }
+  const fc={};
   if(F.length){const c=await SB.from('flash_comments').select('flash_id').in('flash_id',F.map(x=>x.id)).limit(5000);(c.data||[]).forEach(z=>{fc[z.flash_id]=(fc[z.flash_id]||0)+1})}
-  const sum=(a,f)=>a.reduce((s,x)=>s+(+f(x)||0),0);
   const views=sum(F,x=>x.views),fL=sum(F,x=>x.likes),fC=sum(Object.values(fc),x=>x),pL=sum(Pp,x=>cn(x.post_likes)),pC=sum(Pp,x=>cn(x.post_comments));
-  const pc=(a,b)=>b?(a/b*100).toFixed(1).replace('.',',')+'%':'0%';
-  const card=(t,v)=>`<div class="ofp"><small>${t}</small><b>${v}</b></div>`;
-  box.innerHTML=
-    `<div class="ofp"><h3>FreshMilk: ${esc(bl.title)}</h3><p class="of-p">Видео компании и их статистика. Flashes видны в общем FreshMilk и на странице компании.</p><div class="of-bt"><button data-oa="upt">Загрузить Flash</button><button class="g" data-oa="blog" data-b="${bid}" data-n="${esc(bl.title)}">Страница компании</button></div></div>`+UPFORM+
-    `<div class="of-g">${card('Подписчики',W.length)}${card('Просмотры Flashes',views)}${card('Лайки (видео и посты)',fL+pL)}${card('Комментарии',fC+pC)}${card('Вовлечённость видео',pc(fL+fC,views))}${card('Просмотров на Flash',F.length?Math.round(views/F.length):0)}${card('Публикаций',Pp.length)}${card('Flashes',F.length)}</div>`+
-    `<div class="ofp"><h3>Новые подписчики за 14 дней</h3>${chart(W.map(w=>({created_at:w.created_at,amount:1})))}</div>`+
-    `<div class="ofp"><h3>Flashes</h3>${F.map(x=>{const c=fc[x.id]||0;return `<div class="of-r"><span><b>${esc(x.title)}</b><small>${fd(x.created_at)} · ${x.views||0} просм. · ${x.likes||0} лайков · ${c} комм. · лайков на просмотр ${pc(+x.likes||0,+x.views||0)}</small></span><div class="of-bt" style="margin:0"><button class="g" data-oa="fl" data-id="${esc(x.id)}">Открыть</button><button class="g" data-oa="fdel" data-id="${esc(x.id)}">Удалить</button></div></div>`}).join('')||'<div class="of-em">Flashes пока нет</div>'}</div>`+
-    `<div class="ofp"><h3>Публикации</h3>${Pp.map(x=>`<div class="of-r"><span><b>${esc((x.body||'').trim().slice(0,60)||'Фото')}</b><small>${fd(x.created_at)} · ${cn(x.post_likes)} лайков · ${cn(x.post_comments)} комм.</small></span></div>`).join('')||'<div class="of-em">Публикаций пока нет</div>'}</div>`;
+  const title=isB?biz.title:'Личный Fresh';
+  const cards=[scard('Заработано монет',mk(earn(F))),scard('Просмотры Flashes',views),scard(isB?'Лайки (видео и посты)':'Лайки',fL+pL),scard('Комментарии',fC+pC),scard('Вовлечённость видео',pcn(fL+fC,views)),scard('Просмотров на Flash',F.length?Math.round(views/F.length):0),scard('Flashes',F.length)];
+  if(isB)cards.unshift(scard('Подписчики',W.length));
+  if(isB)cards.push(scard('Публикаций',Pp.length));
+  box.innerHTML=(both?'<button class="back" data-oa="scback">← Назад</button>':'')+
+    `<div class="ofp"><h3>${esc(title)}</h3><p class="of-p">${isB?'Видео компании и их статистика. Flashes видны в общем Fresh и на странице компании.':'Твои Flashes и их статистика.'} За каждые 20 просмотров начисляется 1 монета, она сама приходит ${isB?'на счёт компании':'на твой личный счёт в Банке'}.</p><div class="of-bt"><button data-oa="upt">Загрузить Flash</button>${isB?`<button class="g" data-oa="blog" data-b="${bid}" data-n="${esc(biz.title)}">Страница компании</button>`:''}</div></div>`+upForm(bid)+
+    `<div class="of-g">${cards.join('')}</div>`+
+    (isB?`<div class="ofp"><h3>Новые подписчики за 14 дней</h3>${chart(W.map(w=>({created_at:w.created_at,amount:1})))}</div>`:'')+
+    `<div class="ofp"><h3>Flashes</h3>${F.map(x=>{const c=fc[x.id]||0;return `<div class="of-r"><span><b>${esc(x.title)}</b><small>${fd(x.created_at)} · ${x.views||0} просм. · ${x.likes||0} лайков · ${c} комм. · заработано ${mk(Math.floor((+x.views||0)/20))}</small></span><div class="of-bt" style="margin:0"><button class="g" data-oa="fl" data-id="${esc(x.id)}">Открыть</button><button class="g" data-oa="fdel" data-id="${esc(x.id)}">Удалить</button></div></div>`}).join('')||'<div class="of-em">Flashes пока нет</div>'}</div>`+
+    (isB?`<div class="ofp"><h3>Публикации</h3>${Pp.map(x=>`<div class="of-r"><span><b>${esc((x.body||'').trim().slice(0,60)||'Фото')}</b><small>${fd(x.created_at)} · ${cn(x.post_likes)} лайков · ${cn(x.post_comments)} комм.</small></span></div>`).join('')||'<div class="of-em">Публикаций пока нет</div>'}</div>`:'');
   initUp(bid);
 }
 
@@ -419,7 +455,7 @@ async function all(){
 async function jobs(){
   const L=await R('biz_jobs');
   const lab={new:'Отклик отправлен',yes:'Принят',no:'Отклонён'};
-  $('#of-b').innerHTML=(!tabs().some(x=>x[0]==='home')?'<div class="ofp"><p class="of-p">Разделы про бизнес открываются владельцам бизнесов и их сотрудникам. Здесь можно найти работу в ИП или ООО, а во вкладке «Инструменты» есть программы для работы.</p></div>':'')+
+  $('#of-b').innerHTML=(!tabs().some(x=>x[0]==='home')?'<div class="ofp"><p class="of-p">Разделы про бизнес открываются владельцам бизнесов и их сотрудникам. Здесь можно найти работу в ИП или ООО, а во вкладке «Инструменты» есть программы для работы. Во вкладке «Студия» можно загружать свои Flashes и получать монеты за просмотры.</p></div>':'')+
     (L.map(v=>`<div class="ofp"><h3>${esc(v.name)} <span class="of-tag">${esc(v.role)}</span></h3><p class="of-p">${esc(v.descr)}</p><small style="margin-top:6px"><b>${mk(v.salary)} в месяц</b>, ${v.negotiable?'можно обсудить':'без обсуждения'}</small>`+
       (v.my?`<small style="margin-top:8px">${lab[v.my]||''}</small>`
         :applyFor===v.id?`<textarea id="of-am" maxlength="500" placeholder="Расскажи о себе и опыте"></textarea><div class="of-bt"><button data-oa="send" data-id="${v.id}">Отправить</button><button class="g" data-oa="applyx">Отмена</button></div>`
@@ -451,7 +487,7 @@ function openTool(c){
 document.addEventListener('click',async e=>{
   const r=root();if(!r||!r.contains(e.target))return;
   const t=e.target,ot=t.closest('[data-ot]');
-  if(ot){tab=ot.dataset.ot;FB=null;view=null;applyFor=null;fineFor=null;shell();return}
+  if(ot){tab=ot.dataset.ot;FB=null;view=null;applyFor=null;fineFor=null;SC=null;shell();return}
   if(view&&view.t==='blog')keepDraft();
   const pm=t.closest('[data-pm]');
   if(pm){const pp=PS.find(z=>String(z.id)===pm.dataset.pm);if(window.CMT&&CMT.report)CMT.report('post',+pm.dataset.pm,pp?pp.user_id:'');return}
@@ -496,7 +532,9 @@ document.addEventListener('click',async e=>{
     }
     if(a==='bmavx'||a==='bmcvx'){await R('biz_blog_media',{p_bid:+b.dataset.b,p_which:a==='bmavx'?'avatar':'cover',p_data:''});say('Убрано');show();return}
     if(a==='pgt'){pg=b.dataset.k;show();return}
-    if(a==='tofm'){tab='fm';view=null;shell();return}
+    if(a==='tofm'){SC='biz';tab='fm';view=null;shell();return}
+    if(a==='sc'){SC=b.dataset.k;show();return}
+    if(a==='scback'){SC=null;show();return}
     if(a==='upt'){const f=document.getElementById('ou');f.hidden=!f.hidden;if(!f.hidden){f.scrollIntoView({behavior:'smooth',block:'nearest'});upLimit()}return}
     if(a==='fl'){if(window.FM&&FM.open)FM.open(id);return}
     if(a==='fdel'){
@@ -574,7 +612,7 @@ async function init0(){
   r.innerHTML='<h2 class="sec" style="margin-top:0">MilkOffice</h2><div class="of-em">Загружаем…</div>';
   try{O=await R('biz_office')}catch(e){O=null}
   if(!O){r.innerHTML='<h2 class="sec" style="margin-top:0">MilkOffice</h2><div class="ofp"><p class="of-p">Чтобы открыть Офис, войди в аккаунт.</p></div>';return}
-  norm(O);FB=null;view=null;applyFor=null;fineFor=null;
+  norm(O);FB=null;view=null;applyFor=null;fineFor=null;SC=null;
   tab=tabs()[0][0];
   if(want){pg='posts';PD='';if(PI){URL.revokeObjectURL(PI.url);PI=null}view={t:'blog',b:want.b,n:want.n};want=null}
   shell();
