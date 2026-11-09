@@ -85,6 +85,8 @@ st.textContent=`
 .ofs-c em{font-style:normal;font-size:12.5px;font-weight:700;color:#2fa876}
 @media(max-width:700px){.obh-cv{height:120px}.obh-av{width:92px;height:92px;margin-top:-40px;font-size:30px}.obh-bd{padding:0 16px 18px;gap:14px}.obh-w h2{font-size:20px}}`;
 document.head.appendChild(st);
+/* окно раздела: создаём само, если его ещё нет в index.html */
+if(!document.getElementById('v-office')){const sc=document.createElement('section');sc.id='v-office';sc.hidden=true;document.querySelector('.main').appendChild(sc)}
 
 const root=()=>document.getElementById('v-office');
 const $=s=>root().querySelector(s);
