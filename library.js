@@ -22,15 +22,15 @@ const hr=id=>`<span class="lb-hr${lk.has(id)?' on':''}" data-h="${id}" role="but
 
 const st=document.createElement('style');st.textContent=`
 #v-lib{padding-bottom:70px}
-.sw.lb-up{display:inline-flex;align-items:center;gap:8px}.sw svg{width:15px;height:15px}
+.sw svg{width:15px;height:15px}
 .lb-hb{display:flex;gap:10px;flex-wrap:wrap}
-.lb-up.g{background:#fff;color:var(--cy);border:1.5px solid var(--cy)}
+.lb-top{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
 .lb-ok{margin-top:16px;padding:12px 18px;border-radius:14px;background:#e7f6e5;color:var(--ok);font-weight:600;font-size:13px}
 .lb-ok.bad{background:#fff1e0;color:#d97706}
 .lb-g{display:grid;grid-template-columns:300px 1fr;gap:22px;margin-top:22px;align-items:start}
 .lb-books{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
 .lb-b{text-align:left;background:#fff;border-radius:20px;padding:12px;box-shadow:0 6px 30px rgba(0,0,0,.04)}
-.lb-b b{display:block;font-size:14px;font-weight:600;margin:10px 4px 2px;line-height:1.25}
+.lb-b b{display:block;font-size:14px;font-weight:600;margin:10px 4px 2px;line-height:1.25;color:#34404e}
 .lb-b small{display:block;font-size:11px;color:var(--mu);margin:0 4px 4px}
 .lb-cv{position:relative;border-radius:6px 12px 12px 6px;color:#fff;display:flex;align-items:center;justify-content:center;text-align:center;font-weight:800;overflow:hidden;box-shadow:0 4px 14px rgba(0,0,0,.15)}
 .lb-cv::before{content:'';position:absolute;left:0;top:0;bottom:0;width:8%;background:rgba(0,0,0,.18)}
@@ -45,8 +45,8 @@ const st=document.createElement('style');st.textContent=`
 .lb-ed{width:36px;height:36px;border-radius:50%;background:var(--pl);color:var(--cy);display:grid;place-items:center;flex:none}.lb-ed svg{width:16px;height:16px}
 .lb-bar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
 .lb-bar .r{display:flex;gap:10px;flex-wrap:wrap}
-.lb-btn{height:36px;padding:0 18px;border-radius:18px;background:var(--cy);color:#fff;font-weight:600;font-size:13px;display:inline-flex;align-items:center;gap:8px}
-.lb-btn.gn{background:#2fbf5a}.lb-btn svg{width:16px;height:16px}.lb-btn:disabled{opacity:.6}
+.lb-btn{height:36px;padding:0 18px;border-radius:18px;background:var(--cy);color:#fff;font-weight:600;font-size:13px;display:inline-flex;align-items:center;justify-content:center;gap:8px;cursor:pointer}
+.lb-btn.gn{background:#2fbf5a}.lb-btn svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}.lb-btn:disabled{opacity:.6}
 .lb-btn.big{height:46px;padding:0 38px;font-size:15px;align-self:flex-start;margin-top:14px}
 .lb-info{display:grid;grid-template-columns:1fr 1fr;min-height:calc(100vh - 110px);border-radius:25px;overflow:hidden;background:#fff;box-shadow:0 6px 30px rgba(0,0,0,.08)}
 .lb-l{background:radial-gradient(circle at 30% 20%,#1c3a5c,#0b1626);display:grid;place-items:center;padding:30px}
@@ -61,8 +61,8 @@ const st=document.createElement('style');st.textContent=`
 .lb-st{font-size:32px;line-height:1;color:#d5dbe0;padding:0 2px}.lb-st.on{color:#f5b81c}
 .lb-avg{font-size:13px;font-weight:600;color:#566170}
 .lb-tt{display:flex;align-items:center;gap:10px;justify-content:center;margin:20px 0 6px}
-.lb-tt h2{font-size:22px;font-weight:700;color:#34404e}
-.lb-tt input{font:inherit;font-size:22px;font-weight:700;color:#34404e;border:0;border-bottom:2px solid var(--cy);outline:0;background:transparent;text-align:center;max-width:80vw}
+.lb-tt h2{font-size:22px;font-weight:700;color:#fff}
+.lb-tt input{font:inherit;font-size:22px;font-weight:700;color:#fff;border:0;border-bottom:2px solid var(--cy);outline:0;background:transparent;text-align:center;max-width:80vw}
 .lb-pen{width:34px;height:34px;border-radius:50%;background:var(--pl);color:var(--cy);display:grid;place-items:center}.lb-pen svg{width:16px;height:16px}
 .lb-desc{display:block;width:100%;max-width:980px;margin:6px auto 0;height:56px;border:1px solid #dfe5ea;border-radius:14px;padding:10px 14px;font:inherit;font-size:13px;resize:none;outline:0;background:#fff}
 .lb-sp{display:grid;grid-template-columns:1fr 1fr;max-width:980px;margin:10px auto 0;background:#fffdf7;border-radius:18px;box-shadow:0 14px 50px rgba(0,0,0,.12);overflow:hidden;position:relative}
@@ -70,7 +70,8 @@ const st=document.createElement('style');st.textContent=`
 .lb-sp.one{grid-template-columns:1fr;max-width:560px}
 .lb-sp.one::after{display:none}.lb-sp.one .pgw+.pgw{display:none}
 .pgw{position:relative}
-.pg{display:block;width:100%;height:min(60vh,470px);border:0;outline:0;resize:none;background:transparent;padding:30px 32px 10px;font:inherit;font-size:14px;line-height:1.7;color:#34404e}
+.pg{display:block;width:100%;height:min(60vh,470px);border:0;outline:0;resize:none;background:transparent;padding:30px 32px 10px;font:inherit;font-size:14px;line-height:1.7;color:#34404e;overflow:hidden;scrollbar-width:none}
+.pg::-webkit-scrollbar{display:none;width:0;height:0}
 .pn{text-align:center;font-size:11px;color:var(--mu);padding:0 0 12px}
 .meas{position:absolute;left:0;top:0;visibility:hidden;pointer-events:none}
 .lb-nav{display:flex;gap:16px;justify-content:center;align-items:center;margin:18px 0;font-size:13px;color:#566170}
@@ -80,7 +81,7 @@ const st=document.createElement('style');st.textContent=`
 .lb-it{position:relative}
 .lb-ed svg,.lb-mn svg{fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .lb-mn{position:absolute;right:8px;top:48px;z-index:5;background:#fff;border-radius:14px;box-shadow:0 8px 30px rgba(0,0,0,.18);padding:6px;min-width:170px}
-.lb-mn button{display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;border-radius:10px;font-size:13px;text-align:left}
+.lb-mn button{display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;border-radius:10px;font-size:13px;text-align:left;color:#34404e}
 .lb-mn button:hover{background:var(--pl)}
 .lb-mn svg{width:16px;height:16px}
 .lb-mn .red{color:#e5484d}
@@ -96,10 +97,15 @@ const st=document.createElement('style');st.textContent=`
 .lb-rg input{width:100%}
 .lb-fin{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:6px 0}
 .lb-btn.gr{background:#fff;color:var(--cy);border:1.5px solid var(--cy)}
-.lb-md{position:fixed;inset:0;background:rgba(0,0,0,.4);display:grid;place-items:center;z-index:999;padding:20px}
-.lb-mb{background:#fff;border-radius:20px;padding:24px;max-width:340px;width:100%;text-align:center}
-.lb-mb p{font-size:14px;line-height:1.5;color:#34404e;margin-bottom:18px}
+.lb-md{position:fixed;inset:0;background:rgba(0,0,0,.6);display:grid;place-items:center;z-index:999;padding:20px}
+.lb-mb{background:linear-gradient(160deg,#17294a,#0b1626);border:1px solid rgba(255,255,255,.12);box-shadow:0 20px 60px rgba(0,0,0,.5);border-radius:20px;padding:24px;max-width:340px;width:100%;text-align:center;color:#e8eef7}
+.lb-mb p{font-size:14px;line-height:1.5;color:#e8eef7;margin-bottom:18px}
 .lb-mb div{display:flex;gap:10px;justify-content:center}
+.lb-mb label{color:#dfe8f4}
+.lb-mb input[type=radio]{accent-color:var(--cy)}
+.lb-mb textarea{background:rgba(255,255,255,.06);color:#e8eef7;border-color:rgba(255,255,255,.18)!important}
+.lb-mb textarea::placeholder{color:#8fa0b8}
+.lb-mb .lb-btn.gr{background:transparent;color:var(--cy)}
 .lb-btn.rd{background:#e5484d}
 @media(max-width:820px){.lb-g{grid-template-columns:1fr}}
 @media(max-width:700px),(orientation:portrait){.lb-info{grid-template-columns:1fr;min-height:0}.lb-l{padding:24px}.lb-r{padding:24px 20px}}
@@ -137,7 +143,7 @@ const refresh=()=>load().then(()=>{if(!sec.hidden&&(mode==='list'||mode==='mine'
 function listV(){
   const pub=books.filter(b=>b.status==='published'),top=[...pub].sort((a,b)=>b.reads-a.reads).slice(0,5),all=pub,ok=banner();
   const em=loading?'Загружаем…':'Пока пусто';
-  sec.innerHTML=`<div class="top"><div></div><div class="lb-hb"><button class="sw lb-up g" data-a="mine">Мои работы</button><button class="sw lb-up g lb-hbtn" data-a="liked" aria-label="Понравившиеся">${HRT}</button><button class="sw lb-up" data-a="new">${PLUS}Загрузить</button></div></div>${ok}${errT?`<div class="lb-ok bad">${esc(errT)}</div>`:''}
+  sec.innerHTML=`<div class="top lb-top"><div class="lb-hb"><button class="lb-btn gr" data-a="mine">Мои работы</button></div><div class="lb-hb"><button class="lb-btn gr lb-hbtn" data-a="liked" aria-label="Понравившиеся">${HRT}</button><button class="lb-btn" data-a="new">${PLUS}Загрузить</button></div></div>${ok}${errT?`<div class="lb-ok bad">${esc(errT)}</div>`:''}
   <div class="lb-g"><section class="card"><div class="hd"><h2>Топ книг недели</h2></div><div class="hd2">Самые читаемые</div>${top.length?top.map((b,i)=>`<button class="lb-it" data-o="${b.id}"><i class="lb-n">${i+1}</i>${cover(b)}<div><b>${esc(b.title)}</b><small>${esc(b.author)}</small></div><em>Открыть ›</em></button>`).join(''):'<div class="fr">'+em+'</div>'}</section>
   <section>${all.length?`<div class="lb-books">${all.map(b=>`<button class="lb-b" data-o="${b.id}">${hr(b.id)}${cover(b)}<b>${esc(b.title)}</b><small>${esc(b.author)}</small></button>`).join('')}</div>`:'<div class="card">'+(loading?'Загружаем…':'Книг пока нет. Нажми «Загрузить» и опубликуй первую!')+'</div>'}</section></div>`;
 }
@@ -151,7 +157,7 @@ function mineV(){
   const row=(b,i,acts)=>`<div class="lb-it" data-o="${b.id}"><i class="lb-n">${i+1}</i>${cover(b)}<div><b>${esc(b.title)}</b><small>${esc(b.author)}</small></div><button class="lb-ed" data-m="${b.id}" aria-label="Меню">${DOTS}</button>${menuId===b.id?`<div class="lb-mn">${acts.map(a=>`<button data-act="${a[0]}" data-id="${b.id}"${a[0]==='del'?' class="red"':''}>${a[1]}${a[2]}</button>`).join('')}</div>`:''}</div>`;
   const sect=(name,list,acts,hint,always)=>(list.length||always)?`<div class="lb-sh">${name}</div>${hint?'<div class="lb-hint">'+hint+'</div>':''}${list.length?list.map((b,i)=>row(b,i,acts)).join(''):'<div class="fr">Пока пусто</div>'}`:'';
   const body=!meId&&!loading?'<div class="fr">Войди в аккаунт, чтобы видеть свои работы.</div>':sect('Опубликованные',P,AP,'',1)+sect('Черновики',D,AD,'',1)+sect('Архив',A,AA,'Если книгу не трогать 90 дней, она удалится автоматически.');
-  sec.innerHTML=`<div class="top"><div><div class="cap">Библиотека</div><h1>Мои работы</h1></div><div class="lb-hb"><button class="back" id="lb-back" style="margin:0">${BACK}Назад</button><button class="sw lb-up" data-a="new">${PLUS}Загрузить</button></div></div>${ok}<section class="card" style="margin-top:22px;max-width:560px">${body}</section>`;
+  sec.innerHTML=`<div class="top"><div><div class="cap">Библиотека</div><h1>Мои работы</h1></div><div class="lb-hb"><button class="back" id="lb-back" style="margin:0">${BACK}Назад</button><button class="lb-btn" data-a="new">${PLUS}Загрузить</button></div></div>${ok}<section class="card" style="margin-top:22px;max-width:560px">${body}</section>`;
 }
 
 let tab='book',ccov='',cimg=null,cz=1,cx=.5,cy=.5,gen=[],gOpen=false,gTmp=[],paid=false,price=20,freeOn=false,freeN=10;
@@ -365,7 +371,7 @@ function addSt(t,x){
 function fill(){
   const P=per(),pn=sec.querySelectorAll('.pn'),ly=sec.querySelectorAll('.stl');
   sec.querySelector('.lb-sp').classList.toggle('one',P===1);
-  [0,1].forEach(k=>{const v=pages[P*sp+k]||'';if(tas[k].value!==v)tas[k].value=v;pn[k].textContent=P*sp+k+1;ly[k].innerHTML=stHTML(P*sp+k)});
+  [0,1].forEach(k=>{const v=pages[P*sp+k]||'';if(tas[k].value!==v)tas[k].value=v;tas[k].scrollTop=0;pn[k].textContent=P*sp+k+1;ly[k].innerHTML=stHTML(P*sp+k)});
   $('#lb-n').textContent=(P===1?(sp+1):(2*sp+1)+'–'+Math.min(2*sp+2,pages.length))+' из '+pages.length;
   $('#lb-pv').disabled=sp===0;$('#lb-nx').disabled=P*(sp+1)>=pages.length;
   if(ro&&cur)saveProg(P*sp);
