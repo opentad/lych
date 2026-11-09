@@ -1,4 +1,4 @@
-/* Flych: Flashes, короткие вертикальные видео.
+/* Fresh: Flashes, короткие вертикальные видео.
    Видео лежит на GitHub (его туда кладёт Edge Function upload-video),
    название, обложка и просмотры хранятся в таблице flashes (Supabase).
    Внизу панель: Главная / Flashes (лента) / История.
@@ -229,7 +229,7 @@ const imgCover=f=>new Promise((ok,no)=>{
 function shell(){
   view='home';openId=null;cmFor=null;cmMode='c';cmParent=null;
   if(io){io.disconnect();io=null}
-  sec.innerHTML=`<div id="fm-home"><div class="fm-hero"><div><small>${window.MS?MS.ic('flych'):''}Видео</small><h1>Flych</h1>
+  sec.innerHTML=`<div id="fm-home"><div class="fm-hero"><div><small>${window.MS?MS.ic('fresh'):''}Видео</small><h1>Fresh</h1>
     <p>Короткие вертикальные видео: до ${LIM.maxSec} секунд, качество до ${LIM.maxSide}p. Квадратные тоже подходят.</p></div>
     <button class="sw" id="fm-new">Загрузить Flash</button></div>
     <div class="fm-msg" id="fm-msg"></div>
@@ -729,6 +729,6 @@ window.RV.fm=()=>{shell();loadList()};
 const drawer=$('#drawer');
 if(drawer)drawer.addEventListener('click',e=>{
   const b=e.target.closest('.mi');
-  if(b&&b.textContent.trim()==='Flych'){document.body.classList.remove('menu');MS.show('fm')}
+  if(b&&b.textContent.trim()==='Fresh'){document.body.classList.remove('menu');MS.show('fm')}
 });
 })();
