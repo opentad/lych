@@ -135,8 +135,19 @@ $('#tiles').innerHTML=TILES.map(t=>`<button class="tile" data-v="${t[0]}"><i>${i
 
 /* ---------- переключение экранов ---------- */
 const TABKEYS=TABS.map(t=>t[0]);
-function show(v){
+/* адреса разделов: сайт/#/messenger, сайт/#/bank и т.д. */
+const ROUTE={feed:'feed',msg:'messenger',fm:'fresh',lib:'library',bank:'bank',more:'more',office:'office',games:'games',market:'market',prof:'profile'};
+const BACK=Object.fromEntries(Object.entries(ROUTE).map(([k,r])=>[r,k]));
+const fromHash=()=>{const m=/^#\/([a-z]+)$/.exec(location.hash);return m&&BACK[m[1]]||null};
+function setUrl(v){
+  const r=ROUTE[v];if(!r)return;
+  if(v==='prof'&&location.hash.indexOf('#/@')===0)return;
+  const h='#/'+r;if(location.hash===h)return;
+  try{history.pushState(null,'',h)}catch(e){}
+}
+function show(v,pop){
   if(v==='home')v='feed';
+  if(!pop)setUrl(v);
   try{localStorage.setItem('mpage',v)}catch(e){}
   document.querySelectorAll('.main>section').forEach(s=>s.hidden=s.id!=='v-'+v);
   const act=TABKEYS.includes(v)?v:'more';
@@ -164,9 +175,13 @@ window.HWM={st:()=>'new',grades:()=>[],onchange:null,open(){}};
 /* старт: лента, либо последняя открытая страница */
 addEventListener('load',()=>{
   if(location.hash.indexOf('#/@')===0)return;
-  let p=null;try{p=localStorage.getItem('mpage')}catch(e){}
-  show(['feed','market','prof','bank'].includes(p)?p:'feed');
+  let v=fromHash();
+  if(!v){let p=null;try{p=localStorage.getItem('mpage')}catch(e){}v=['feed','market','prof','bank'].includes(p)?p:'feed'}
+  show(v,true);
+  try{history.replaceState(null,'','#/'+ROUTE[v])}catch(e){}
 });
+/* кнопка «Назад» в браузере возвращает на прошлый раздел */
+addEventListener('popstate',()=>{const v=fromHash();if(v)show(v,true)});
 })();
 </script>
 <script src="time.js"></script>
