@@ -117,7 +117,7 @@ const mgrBiz=()=>{const o=own();if(o)return o;const s=O.staff.find(x=>x.role==='
 const finBiz=()=>{const o=own();if(o)return o;const s=O.staff.find(x=>x.role==='Директор'||x.role==='Бухгалтер');if(s)return{id:s.biz_id,kind:s.kind,name:s.name};const f=O.founds[0];return f?{id:f.biz_id,kind:'ooo',name:f.name}:null};
 const tabs=()=>{
   const t=[];
-  if(own()||O.staff.length||O.offers.length||O.founds.length||O.mod)t.push(['home','Главная']);
+  if(own()||O.staff.length||O.offers.length||O.founds.length)t.push(['home','Главная']);
   if(finBiz())t.push(['fin','Финансы']);
   if(mgrBiz()||O.staff.length)t.push(['team','Команда']);
   if(O.mod)t.push(['all','Бизнесы']);
