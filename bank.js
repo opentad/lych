@@ -12,12 +12,13 @@ const users=()=>USERS;
 /* ===== помощники ===== */
 const esc=t=>String(t).replace(/[<>&"]/g,m=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[m]));
 const fmt=n=>Number(n).toLocaleString('ru-RU');
+const kp=n=>{n=Math.abs(+n||0);const a=n%10,c=n%100;return a===1&&c!==11?'коин':(a>=2&&a<=4&&(c<12||c>14))?'коина':'коинов'};
 const ic=k=>window.MS?MS.ic(k):'';
 const KN=k=>({npd:'ИП на НПД',ip:'ИП',ooo:'ООО'})[String(k||'').toLowerCase()]||'ИП';
 const COL=['#4f7cff','#b9a6e8','#f3a6bd','#6fcf8a','#8f7fe0','#e8923a'];
 const ava=u=>{let h=0;for(const c of u.n)h=(h*31+c.charCodeAt(0))>>>0;return u.av?`<i style="background:url('${esc(u.av)}') center/cover"></i>`:`<i style="background:${COL[h%COL.length]}">${esc(u.n.trim()[0]||'?')}</i>`};
 const sg=o=>(o.t==='in'||o.t==='sale'||o.t==='inc')?1:-1;
-const ttl=o=>({in:'Перевод от '+o.who,out:'Перевод для '+o.who,sale:'Продажа'+(o.title?': '+o.title:''),buy:'Покупка'+(o.title?': '+o.title:''),inc:o.kind==='found'?'Найденная монета':'Монетизация'+(o.title?': '+o.title:'')})[o.t]||'Операция';
+const ttl=o=>({in:'Перевод от '+o.who,out:'Перевод для '+o.who,sale:'Продажа'+(o.title?': '+o.title:''),buy:'Покупка'+(o.title?': '+o.title:''),inc:o.kind==='found'?'Найденный коин':'Монетизация'+(o.title?': '+o.title:'')})[o.t]||'Операция';
 const oic=o=>(o.t==='in'||o.t==='inc')?'<span style="display:block;transform:rotate(180deg)">'+ic('arrow')+'</span>':o.t==='out'?ic('arrow'):ic('shop');
 const when=ts=>{const d=new Date(ts);return d.toLocaleDateString('ru-RU',{day:'numeric',month:'long'})+', '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')};
 const monthOps=()=>OPS.slice().sort((a,b)=>b.ts-a.ts);
@@ -126,13 +127,13 @@ function bzPanel(){
   if(z.status==='pending')return `<section class="card"><div class="hd"><h2>${K} «${esc(z.name)}»</h2></div><div class="bk-mu">Заявка на проверке у модераторов. Когда одобрят, откроется счёт.</div></section>`;
   if(z.status==='active'){
     const rule=kd==='npd'?'Ты работаешь одна, сотрудников нанимать нельзя. Зато просто и без лишних правил.'
-      :kd==='ip'?'Зарплаты сотрудникам и взнос платятся со счёта проекта сами. Если денег не хватит, недостающее спишется с твоих личных монет.'
-      :'Зарплаты сотрудникам и взнос платятся со счёта проекта сами. Когда ты выводишь деньги, они делятся между сооснователями по долям (твою долю и комиссию смотри в Офисе). Если денег не хватит, счёт заморозится, а через 30 дней компания закроется. Личные монеты при этом не пострадают, потеряешь только деньги проекта.';
-    return `<section class="card"><div class="hd"><h2>${K} «${esc(z.name)}»</h2></div><div class="bk-mu">Счёт ${esc(z.acc||'')}</div><div style="font-size:30px;font-weight:800;margin:6px 0">${fmt(z.balance)} МК</div>${z.debt>0?`<div class="bk-fb" style="color:#ff8fa3">Штраф: ${fmt(z.debt)} МК${z.debt_note?' ('+esc(z.debt_note)+')':''}. Спишется, когда на счёте появятся деньги.</div>`:''}${z.frozen?`<div class="bk-fb" style="color:#ff8fa3">Счёт заморожен: не хватает денег на взнос, зарплату или штраф. Пополни счёт.</div>`:''}<div class="bk-mu">Следующий взнос ${z.fee} МК: ${new Date(z.fee_until).toLocaleDateString('ru-RU')}. Комиссия при выводе ${z.commission}%.</div><div class="bk-mu">${rule}</div><input class="bk-in" id="bz-s" inputmode="numeric" placeholder="Сумма"><div class="bk-fb" id="bz-fb"></div><div class="bk-act"><button class="bk-go" data-a="bzdep">Пополнить</button><button class="bk-x" data-a="bzwd">Вывести</button></div></section>`;
+      :kd==='ip'?'Зарплаты сотрудникам и взнос платятся со счёта проекта сами. Если денег не хватит, недостающее спишется с твоих личных коинов.'
+      :'Зарплаты сотрудникам и взнос платятся со счёта проекта сами. Когда ты выводишь деньги, они делятся между сооснователями по долям (твою долю и комиссию смотри в Офисе). Если денег не хватит, счёт заморозится, а через 30 дней компания закроется. Личные коины при этом не пострадают, потеряешь только деньги проекта.';
+    return `<section class="card"><div class="hd"><h2>${K} «${esc(z.name)}»</h2></div><div class="bk-mu">Счёт ${esc(z.acc||'')}</div><div style="font-size:30px;font-weight:800;margin:6px 0">${fmt(z.balance)} ${kp(z.balance)}</div>${z.debt>0?`<div class="bk-fb" style="color:#ff8fa3">Штраф: ${fmt(z.debt)} ${kp(z.debt)}${z.debt_note?' ('+esc(z.debt_note)+')':''}. Спишется, когда на счёте появятся деньги.</div>`:''}${z.frozen?`<div class="bk-fb" style="color:#ff8fa3">Счёт заморожен: не хватает денег на взнос, зарплату или штраф. Пополни счёт.</div>`:''}<div class="bk-mu">Следующий взнос ${z.fee} ${kp(z.fee)}: ${new Date(z.fee_until).toLocaleDateString('ru-RU')}. Комиссия при выводе ${z.commission}%.</div><div class="bk-mu">${rule}</div><input class="bk-in" id="bz-s" inputmode="numeric" placeholder="Сумма"><div class="bk-fb" id="bz-fb"></div><div class="bk-act"><button class="bk-go" data-a="bzdep">Пополнить</button><button class="bk-x" data-a="bzwd">Вывести</button></div></section>`;
   }
   const rej=z.status==='rejected'?`<div class="bk-fb" style="color:#ff8fa3">Прошлая заявка отклонена: ${esc(z.reason||'')}</div>`
     :z.status==='closed'?`<div class="bk-fb" style="color:#ff8fa3">${esc(z.reason||'Прошлая компания закрыта')}. Можно открыть новую.</div>`:'';
-  const terms=`<div class="bk-mu">Условия: комиссия ${z.commission}% при выводе денег проекта на личный счёт, взнос ${z.fee} МК раз в 3 месяца. Заявку проверяет модератор.</div>`;
+  const terms=`<div class="bk-mu">Условия: комиссия ${z.commission}% при выводе денег проекта на личный счёт, взнос ${z.fee} ${kp(z.fee)} раз в 3 месяца. Заявку проверяет модератор.</div>`;
   const tx='style="color:#b8c0dc;font-size:13px;line-height:1.5;margin:8px 0"';
   if(bzStep==='num')return `<section class="card"><div class="hd"><h2>Открыть расчётный счёт</h2></div>${rej}<div class="bk-mu">Впиши номер своего ИП (15 цифр) или ООО (13 цифр).</div><input class="bk-in" id="bz-num" inputmode="numeric" maxlength="15" placeholder="Номер ИП или ООО"><div class="bk-fb" id="bz-fb"></div>${terms}<div class="bk-act"><button class="bk-go" data-a="bznext">Продолжить</button><button class="bk-x" data-a="bzx">Закрыть</button></div><button class="bk-ch" data-a="bzno" style="margin-top:10px">У меня нет ИП или ООО</button></section>`;
   if(bzStep==='info')return `<section class="card"><div class="hd"><h2>Чем отличаются ИП на НПД, ИП и ООО</h2></div>
@@ -162,7 +163,7 @@ async function bzMoney(fn){
   const a=parseInt($('#bz-s').value,10),f=$('#bz-fb');
   if(!(a>0)){f.style.color='#f0b46a';f.textContent='Введи сумму больше нуля';return}
   const r=await window.SB.rpc(fn,{amt:a});
-  if(r.error){f.style.color='#f0b46a';f.textContent=r.error.message.includes('no_money')?'Не хватает монет':r.error.message;return}
+  if(r.error){f.style.color='#f0b46a';f.textContent=r.error.message.includes('no_money')?'Не хватает коинов':r.error.message;return}
   note=fn==='biz_deposit'?'Счёт проекта пополнен':'Выведено на личный счёт';await load();
 }
 
@@ -170,10 +171,10 @@ async function send(){
   const a=parseInt($('#bk-a').value,10),c=$('#bk-c').value.trim(),f=$('#bk-fb'),btn=$('[data-a="send"]');
   const bad=m=>{f.textContent=m;f.style.color='#f0b46a'};
   if(!(a>0))return bad('Введи сумму больше нуля');
-  if(BAL!==null&&a>BAL)return bad('Не хватает монет: на счету '+fmt(BAL));
+  if(BAL!==null&&a>BAL)return bad('Не хватает коинов: на счету '+fmt(BAL));
   btn.disabled=true;f.style.color='#b8c0dc';f.textContent='Отправляю…';
   let r;try{r=await window.SB.rpc('send_coins',{to_user:pick.id,amt:a,cmt:c})}catch(e){r={error:{message:''}}}
-  if(r.error){btn.disabled=false;const m=r.error.message||'';return bad(m.includes('no_money')?'Не хватает монет':m.includes('self')?'Нельзя переводить самому себе':m.includes('bad_amount')?'Некорректная сумма':'Не получилось перевести: '+(m||'нет связи'))}
+  if(r.error){btn.disabled=false;const m=r.error.message||'';return bad(m.includes('no_money')?'Не хватает коинов':m.includes('self')?'Нельзя переводить самому себе':m.includes('bad_amount')?'Некорректная сумма':'Не получилось перевести: '+(m||'нет связи'))}
   note='Переведено '+fmt(a)+' → '+pick.n;open=false;pick=null;q='';
   await load();
 }
