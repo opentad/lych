@@ -7,42 +7,43 @@ const PANEL_W=0,PANEL_H=0;
 const st=document.createElement('style');
 st.textContent=`
 .of-tabs{display:flex;gap:8px;margin:14px 0;overflow-x:auto;scrollbar-width:none}
-.of-tabs button{display:flex;gap:8px;align-items:center;height:42px;padding:0 16px;border-radius:14px;background:#fff;color:#566170;font-weight:700;white-space:nowrap;border:0;cursor:pointer}
-.of-tabs button.on{background:#34404e;color:#fff}
+.of-tabs button{display:flex;gap:8px;align-items:center;height:42px;padding:0 16px;border-radius:14px;background:var(--card);border:1px solid var(--ln);color:var(--mu);font-weight:700;white-space:nowrap;cursor:pointer}
+.of-tabs button.on{background:rgba(185,166,232,.16);color:var(--lav);border-color:rgba(185,166,232,.4)}
 .of-tabs svg,.of-i svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.of-m{font-size:13px;font-weight:600;color:#2fa876;margin:0 0 10px}.of-m:empty{display:none}.of-m.e{color:#d6407f}
-.ofp{background:rgba(255,255,255,.8);border-radius:20px;padding:18px;box-shadow:0 6px 30px rgba(0,0,0,.04);margin-bottom:14px}
+.of-m{font-size:13px;font-weight:600;color:var(--ok);margin:0 0 10px}.of-m:empty{display:none}.of-m.e{color:var(--rose)}
+.ofp{background:var(--card);border:1px solid var(--ln);color:var(--tx);border-radius:20px;padding:18px;box-shadow:0 6px 30px rgba(0,0,0,.35);margin-bottom:14px}
 .ofp h3{font-size:17px;font-weight:800;margin:0 0 10px}
 .ofp small{display:block;color:var(--mu);font-size:12px}
-.ofp.of-wn{background:#fff0f3;color:#d6407f;font-weight:600;font-size:13.5px;line-height:1.5}
-.of-p{font-size:14px;line-height:1.5;color:#566170;margin:0}
+.ofp.of-wn{background:rgba(243,166,189,.12);border-color:rgba(243,166,189,.35);color:var(--rose);font-weight:600;font-size:13.5px;line-height:1.5}
+.of-p{font-size:14px;line-height:1.5;color:#b8c0dc;margin:0}
 .of-em{text-align:center;color:var(--mu);padding:22px 0}
 .of-g{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px}
 @media(max-width:700px){.of-g{grid-template-columns:1fr 1fr}}
 .of-g .ofp{margin:0}.of-g b{display:block;font-size:22px;font-weight:800;margin-top:4px}
-.up{color:#2fa876}.dn{color:#d6407f}
+.up{color:var(--ok)}.dn{color:var(--rose)}
 .of-ch{display:flex;gap:6px;align-items:flex-end;height:80px}
-.of-ch i{flex:1;background:#2fa876;border-radius:4px 4px 0 0}.of-ch i.n{background:#d6407f}
-.of-r{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-top:1px solid #eef1f4;font-size:14px}
+.of-ch i{flex:1;background:var(--ok);border-radius:4px 4px 0 0}.of-ch i.n{background:var(--rose)}
+.of-r{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-top:1px solid var(--ln);font-size:14px}
 .of-r:first-of-type{border-top:0}
 .of-r>span{min-width:0;overflow-wrap:anywhere}
 .of-r small{display:block}
-.of-in,.ofp select,.ofp textarea{width:100%;border:1px solid #dfe5ea;border-radius:12px;padding:11px;font:inherit;outline:0;background:#fff;margin:6px 0}
+.of-in,.ofp select,.ofp textarea{width:100%;border:1px solid var(--ln);border-radius:12px;padding:11px;font:inherit;outline:0;background:rgba(255,255,255,.05);color:var(--tx);margin:6px 0}
+.ofp select option{background:#121a33;color:#e8ecf8}
 .ofp textarea{height:70px;resize:none}
 .of-bt{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
-.of-bt button{height:38px;padding:0 16px;border-radius:12px;border:0;font-weight:700;cursor:pointer;background:var(--cy,#17b3e6);color:#fff}
-.of-bt button.g{background:#eef3f8;color:#566170}.of-bt button.r{background:#e5314a}
-.of-tag{display:inline-block;background:#e3f6fd;color:#17b3e6;border-radius:10px;padding:2px 9px;font-size:11px;font-weight:700;margin-right:6px}
-.of-tag.w{background:#ffe3e8;color:#d6407f}
+.of-bt button{height:38px;padding:0 16px;border-radius:12px;border:0;font-weight:700;cursor:pointer;background:var(--grad);color:#fff}
+.of-bt button.g{background:rgba(255,255,255,.08);color:#b8c0dc}.of-bt button.r{background:#e5314a}
+.of-tag{display:inline-block;background:rgba(79,124,255,.16);color:var(--bt);border-radius:10px;padding:2px 9px;font-size:11px;font-weight:700;margin-right:6px}
+.of-tag.w{background:rgba(243,166,189,.16);color:var(--rose)}
 .ofg{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;margin-top:14px}@media(max-width:700px){.ofg{grid-template-columns:1fr}}
-.ofc{background:rgba(255,255,255,.75);backdrop-filter:blur(10px);border-radius:20px;box-shadow:0 6px 30px rgba(0,0,0,.04);overflow:hidden;text-align:center;padding-bottom:18px}
+.ofc{background:var(--card);border:1px solid var(--ln);backdrop-filter:blur(10px);border-radius:20px;box-shadow:0 6px 30px rgba(0,0,0,.35);overflow:hidden;text-align:center;padding-bottom:18px}
 .ofc .ban{height:150px;font-size:60px;display:grid;place-items:center}.ofc h3{font-size:18px;font-weight:700;margin:14px 8px 4px}.ofc p{font-size:12px;color:var(--mu);margin:0 14px 14px;line-height:1.5}
-.of-fs{position:fixed;z-index:5;background:#f6f7f3}
+.of-fs{position:fixed;z-index:5;background:var(--bg)}
 .of-fs iframe{display:block;width:100%;height:100%;border:0;background:#fff}
-.obh{background:rgba(255,255,255,.85);border-radius:24px;box-shadow:0 6px 30px rgba(0,0,0,.04);overflow:hidden;margin-bottom:14px}
+.obh{background:var(--card);border:1px solid var(--ln);border-radius:24px;box-shadow:0 6px 30px rgba(0,0,0,.35);overflow:hidden;margin-bottom:14px}
 .obh-cv{height:170px;background:linear-gradient(120deg,#8fd3f0,#a99bf0) center/cover no-repeat}
 .obh-bd{display:flex;gap:20px;align-items:flex-start;padding:0 24px 22px;flex-wrap:wrap}
-.obh-av{flex:none;width:120px;height:120px;border-radius:50%;margin-top:-52px;border:6px solid #fff;display:grid;place-items:center;color:#fff;font-size:40px;font-weight:700;background-size:cover;background-position:center;box-shadow:0 0 0 3px #e3f6fd}
+.obh-av{flex:none;width:120px;height:120px;border-radius:50%;margin-top:-52px;border:6px solid var(--s2);display:grid;place-items:center;color:#fff;font-size:40px;font-weight:700;background-size:cover;background-position:center;box-shadow:0 0 0 3px rgba(185,166,232,.3)}
 .obh-w{flex:1 1 240px;min-width:0;padding-top:14px}
 .obh-w h2{font-size:24px;font-weight:800;line-height:1.2;margin:0;overflow-wrap:anywhere}
 .obh-nk{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:6px;color:var(--mu);font-size:13px}
@@ -52,37 +53,42 @@ st.textContent=`
 .obh-ss b{display:block;font-size:19px;font-weight:800}.obh-ss small{display:block;font-size:11.5px;color:var(--mu)}
 #v-office [hidden]{display:none!important}
 .obt{display:flex;margin:4px 0 14px}
-.obt button{padding:6px 26px;font-size:17px;font-weight:700;color:#9aa5b0;background:transparent;border:0;border-left:1px solid #dfe5ea;cursor:pointer}
-.obt button:first-child{border-left:0}.obt button.on{color:var(--cy,#17b3e6)}
+.obt button{padding:6px 26px;font-size:17px;font-weight:700;color:var(--mu);background:transparent;border:0;border-left:1px solid var(--ln);cursor:pointer}
+.obt button:first-child{border-left:0}.obt button.on{color:var(--lav)}
 .obp-h{display:flex;gap:12px;align-items:center;margin-bottom:10px}
 .obp-a{width:44px;height:44px;border-radius:50%;flex:none;display:grid;place-items:center;color:#fff;font-weight:700;background-size:cover;background-position:center}
 .obp-h small{color:var(--mu);font-size:12px}
 .obp p{line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere;margin:0}
 .obp img.pi{display:block;max-width:100%;border-radius:14px;margin-top:10px}
 .obp-ac{display:flex;gap:10px;margin-top:12px}
-.obp-ac button{display:flex;gap:7px;align-items:center;height:38px;padding:0 14px;border-radius:12px;background:#f2f4f8;color:#7a8594;font-weight:700;border:0;cursor:pointer}
-.obp-ac button.on{color:#f45b97;background:#ffeaf2}
+.obp-ac button{display:flex;gap:7px;align-items:center;height:38px;padding:0 14px;border-radius:12px;background:rgba(255,255,255,.06);color:var(--mu);font-weight:700;border:0;cursor:pointer}
+.obp-ac button.on{color:#f45b97;background:rgba(243,166,189,.14)}
 .obp-ac svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .obp-pv{display:flex;gap:12px;align-items:center;margin-top:10px}
 .obp-pv img{width:64px;height:64px;border-radius:12px;object-fit:cover}
-.obp-pv button{height:34px;padding:0 14px;border-radius:12px;border:0;background:#eef3f8;color:#566170;font-weight:700;cursor:pointer}
+.obp-pv button{height:34px;padding:0 14px;border-radius:12px;border:0;background:rgba(255,255,255,.08);color:#b8c0dc;font-weight:700;cursor:pointer}
 .obf{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
 @media(max-width:700px){.obf{grid-template-columns:repeat(2,1fr)}}
 .obf-i{position:relative;aspect-ratio:9/16;border-radius:18px;overflow:hidden;background:#222 center/cover;border:0;padding:0;cursor:pointer}
 .obf-i span{position:absolute;left:0;right:0;bottom:0;padding:26px 10px 10px;color:#fff;font-size:12.5px;font-weight:600;text-align:left;background:linear-gradient(transparent,rgba(0,0,0,.65));overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
-.ofl{display:inline-flex;align-items:center;height:38px;padding:0 16px;border-radius:12px;background:#eef3f8;color:#566170;font-weight:700;cursor:pointer;margin:6px 0}
+.ofl{display:inline-flex;align-items:center;height:38px;padding:0 16px;border-radius:12px;background:rgba(255,255,255,.08);color:#b8c0dc;font-weight:700;cursor:pointer;margin:6px 0}
 .ou-rules{display:block;margin-bottom:8px}
 .ou-row{display:flex;gap:18px;flex-wrap:wrap;margin-top:8px}
-.ou-cv{flex:none;width:110px;aspect-ratio:9/16;border-radius:14px;background:#eaf6fd center top/cover}
+.ou-cv{flex:none;width:110px;aspect-ratio:9/16;border-radius:14px;background:#1a2342 center top/cover}
 .ou-f{flex:1;min-width:220px}.ou-f input[type=range]{width:100%;margin:6px 0}
 .ofs{display:grid;grid-template-columns:3fr 2fr;gap:14px;margin-bottom:14px}
 @media(max-width:700px){.ofs{grid-template-columns:1fr}}
-.ofs-c{display:flex;flex-direction:column;justify-content:flex-end;gap:6px;text-align:left;min-height:120px;padding:20px;border-radius:22px;border:0;cursor:pointer;background:rgba(255,255,255,.8);color:#34404e;box-shadow:0 6px 30px rgba(0,0,0,.04)}
-.ofs-c.big{min-height:170px;background:linear-gradient(135deg,#d7f3fc,#e6defa)}
+.ofs-c{display:flex;flex-direction:column;justify-content:flex-end;gap:6px;text-align:left;min-height:120px;padding:20px;border-radius:22px;border:0;cursor:pointer;background:var(--card);border:1px solid var(--ln);color:var(--tx);box-shadow:0 6px 30px rgba(0,0,0,.35)}
+.ofs-c.big{min-height:170px;background:linear-gradient(135deg,rgba(79,124,255,.3),rgba(185,166,232,.24) 55%,rgba(243,166,189,.2))}
 .ofs-c h3{font-size:20px;font-weight:800;margin:0;overflow-wrap:anywhere}
 .ofs-c.big h3{font-size:24px}
-.ofs-c span{font-size:13px;color:#566170}
-.ofs-c em{font-style:normal;font-size:12.5px;font-weight:700;color:#2fa876}
+.ofs-c span{font-size:13px;color:var(--mu)}
+.ofs-c em{font-style:normal;font-size:12.5px;font-weight:700;color:var(--ok)}
+.of-bar{display:flex;gap:3px;align-items:flex-end;height:96px;margin-top:8px}
+.of-bar i{flex:1;min-width:2px;border-radius:3px 3px 0 0;background:var(--cy)}
+.of-bar i.l{background:var(--rose)}.of-bar i.c{background:var(--lav)}
+.of-bl{display:flex;justify-content:space-between;font-size:11px;color:var(--mu);margin-top:4px}
+.of-pk{font-size:13px;color:#b8c0dc;margin:2px 0 4px}
 @media(max-width:700px){.obh-cv{height:120px}.obh-av{width:92px;height:92px;margin-top:-40px;font-size:30px}.obh-bd{padding:0 16px 18px;gap:14px}.obh-w h2{font-size:20px}}`;
 document.head.appendChild(st);
 /* окно раздела: создаём само, если его ещё нет в index.html */
@@ -104,7 +110,8 @@ const CARDS=[{id:'sandbox3d',art:ART3D,bg:'linear-gradient(160deg,#d9f2e3,#8fd4a
   url:'tools/sandbox3d.html'}];
 const BLOG=['Маркетолог','Копирайтёр','Директор'];
 const fd=t=>t?new Date(t).toLocaleDateString('ru-RU'):'';
-const mk=n=>(+n||0)+' мк';
+const kp=n=>{n=Math.abs(+n||0);const a=n%10,b=n%100;return a===1&&b!==11?'коин':(a>=2&&a<=4&&(b<12||b>14))?'коина':'коинов'};
+const mk=n=>(+n||0)+' '+kp(n);
 const KIND=k=>({npd:'ИП на НПД',ip:'ИП',ooo:'ООО'})[String(k||'').toLowerCase()]||String(k||'');
 const lk=b=>String(b&&b.kind||'').toLowerCase();
 const canHire=b=>!!b&&lk(b)!=='npd';
@@ -234,7 +241,7 @@ async function founders(bid,name){
   let d;try{d=await R('biz_founders_info',{p_bid:bid})}catch(e){return ''}
   const rows=(d.list||[]).map(x=>`<div class="of-r"><span><b>${esc(x.name||'Игрок')}</b>${x.nick?' @'+esc(x.nick):''}<small>${x.is_owner?'Главный владелец':'Сооснователь'}</small></span><b>${x.share}%</b></div>`).join('');
   const out=(d.out||[]).map(x=>`<div class="of-r"><span>Предложено: ${esc(x.to_name||'игроку')}, ${x.share}%${x.price>0?' за '+mk(x.price):' бесплатно'}</span><div class="of-bt" style="margin:0"><button class="g" data-oa="offx" data-id="${x.id}">Отозвать</button></div></div>`).join('');
-  return `<div class="ofp"><h3>Сооснователи: ${esc(name)}</h3>${rows}<small style="margin-top:8px">Твоя доля: ${d.me}%. Прибыль делится по долям: когда главный владелец выводит деньги со счёта, каждый получает свою часть.</small>${out?'<h3 style="margin-top:14px">Мои предложения</h3>'+out:''}<h3 style="margin-top:14px">Предложить долю</h3><input class="of-in" id="of-on-${bid}" placeholder="Ник игрока" autocomplete="off"><input class="of-in" id="of-os-${bid}" type="number" min="1" max="49" placeholder="Сколько % отдать"><input class="of-in" id="of-op-${bid}" type="number" min="0" placeholder="Цена в монетах (0 — бесплатно)"><small>Можно позвать сооснователя или продать часть своей доли. Главный владелец всегда держит не меньше 51%. Всего сооснователей до 5.</small><div class="of-bt"><button data-oa="offmk" data-b="${bid}">Предложить</button></div></div>`;
+  return `<div class="ofp"><h3>Сооснователи: ${esc(name)}</h3>${rows}<small style="margin-top:8px">Твоя доля: ${d.me}%. Прибыль делится по долям: когда главный владелец выводит деньги со счёта, каждый получает свою часть.</small>${out?'<h3 style="margin-top:14px">Мои предложения</h3>'+out:''}<h3 style="margin-top:14px">Предложить долю</h3><input class="of-in" id="of-on-${bid}" placeholder="Ник игрока" autocomplete="off"><input class="of-in" id="of-os-${bid}" type="number" min="1" max="49" placeholder="Сколько % отдать"><input class="of-in" id="of-op-${bid}" type="number" min="0" placeholder="Цена в коинах (0 — бесплатно)"><small>Можно позвать сооснователя или продать часть своей доли. Главный владелец всегда держит не меньше 51%. Всего сооснователей до 5.</small><div class="of-bt"><button data-oa="offmk" data-b="${bid}">Предложить</button></div></div>`;
 }
 
 /* ---------- Страница компании (как профиль) ---------- */
@@ -345,6 +352,30 @@ function initUp(bid){
   };
 }
 
+const pad2=n=>String(n).padStart(2,'0');
+function bars(v,a,b,cls){const mx=Math.max(1,...v);return '<div class="of-bar">'+v.map(n=>`<i class="${cls||''}" style="height:${n?Math.max(5,n/mx*100):2}%" title="${n}"></i>`).join('')+'</div><div class="of-bl"><span>'+a+'</span><span>'+b+'</span></div>'}
+function daysBlock(days){
+  const m={};(days||[]).forEach(x=>{m[String(x.d).slice(0,10)]=+x.n||0});
+  const keys=[],v=[];
+  for(let i=13;i>=0;i--){const k=new Date(Date.now()-i*864e5).toISOString().slice(0,10);keys.push(k);v.push(m[k]||0)}
+  const tot=v.reduce((a,b)=>a+b,0),f=k=>k.slice(8,10)+'.'+k.slice(5,7);
+  if(!tot)return '<div class="ofp"><h3>Просмотры по дням</h3><div class="of-em" style="padding:10px 0">Пока нет данных. Здесь считаются просмотры за последние 14 дней.</div></div>';
+  const pk=v.indexOf(Math.max(...v));
+  return `<div class="ofp"><h3>Просмотры по дням</h3><div class="of-pk">Больше всего: ${f(keys[pk])} (${v[pk]})</div>${bars(v,f(keys[0]),f(keys[13]))}</div>`;
+}
+function secBlock(ev,kind,title,cls){
+  const a=(ev||[]).filter(e=>e.k===kind);
+  if(!a.length)return `<div class="ofp"><h3>${title}</h3><div class="of-em" style="padding:10px 0">Пока нет данных. Они появятся, когда зрители начнут смотреть.</div></div>`;
+  const N=Math.min(61,Math.max(...a.map(e=>+e.s))+1),v=Array(N).fill(0);
+  a.forEach(e=>{if(+e.s<N)v[+e.s]+=(+e.n||0)});
+  const tot=v.reduce((x,y)=>x+y,0),pk=v.indexOf(Math.max(...v));
+  return `<div class="ofp"><h3>${title}</h3><div class="of-pk">Чаще всего: около ${pk} с (${v[pk]} из ${tot})</div>${bars(v,'0 с',(N-1)+' с',cls)}</div>`;
+}
+function statsHtml(ST){
+  if(!ST)return '<div class="ofp"><small>Подробная статистика появится после обновления базы данных.</small></div>';
+  const ev=ST.ev||[];
+  return daysBlock(ST.days)+secBlock(ev,'skip','На какой секунде пролистывают','')+secBlock(ev,'like','На какой секунде ставят лайк','l')+secBlock(ev,'comment','На какой секунде комментируют','c');
+}
 const FC='id,title,dur,views,likes,created_at';
 const sum=(a,f)=>a.reduce((s,x)=>s+(+f(x)||0),0);
 const earn=a=>a.reduce((s,x)=>s+Math.floor((+x.views||0)/20),0);
@@ -354,7 +385,7 @@ async function studio(){
   const box=$('#of-b'),SB=window.SB,u=await getUser();
   if(!u){box.innerHTML='<div class="of-em">Чтобы открыть студию, войди в аккаунт.</div>';return}
   /* монетизация: 1 монета за 20 просмотров. Личные Flashes: на личный счёт, корпоративные: на счёт компании */
-  try{const c=await R('flash_collect');if(c&&(c.coins>0||c.biz>0)){say((c.coins>0?'Начислено '+c.coins+' мк на личный счёт в Банке. ':'')+(c.biz>0?'На счёт компании начислено '+c.biz+' мк.':''));if(c.biz>0)O=norm(await R('biz_office'));if(window.COIN)COIN.sync()}}catch(e){}
+  try{const c=await R('flash_collect');if(c&&(c.coins>0||c.biz>0)){say((c.coins>0?'Начислено '+mk(c.coins)+' на личный счёт в Банке. ':'')+(c.biz>0?'На счёт компании начислено '+mk(c.biz)+'.':''));if(c.biz>0)O=norm(await R('biz_office'));if(window.COIN)COIN.sync()}}catch(e){}
   const m=postBiz(),bl=m?await getBlog(m.id):null,biz=bl?{id:m.id,title:bl.title}:null;
   const mr=await SB.from('flashes').select(FC).eq('user_id',u.id).is('biz_id',null).order('created_at',{ascending:false}).limit(100);
   const ML=mr.data||[],both=!!biz&&ML.length>0;
@@ -379,13 +410,14 @@ async function studio(){
   const fc={};
   if(F.length){const c=await SB.from('flash_comments').select('flash_id').in('flash_id',F.map(x=>x.id)).limit(5000);(c.data||[]).forEach(z=>{fc[z.flash_id]=(fc[z.flash_id]||0)+1})}
   const views=sum(F,x=>x.views),fL=sum(F,x=>x.likes),fC=sum(Object.values(fc),x=>x),pL=sum(Pp,x=>cn(x.post_likes)),pC=sum(Pp,x=>cn(x.post_comments));
+  let ST=null;try{ST=await R('flash_stats',{p_biz:bid})}catch(e){}
   const title=isB?biz.title:'Личный Fresh';
-  const cards=[scard('Заработано монет',mk(earn(F))),scard('Просмотры Flashes',views),scard(isB?'Лайки (видео и посты)':'Лайки',fL+pL),scard('Комментарии',fC+pC),scard('Вовлечённость видео',pcn(fL+fC,views)),scard('Просмотров на Flash',F.length?Math.round(views/F.length):0),scard('Flashes',F.length)];
+  const cards=[scard('Заработано',mk(earn(F))),scard('Просмотры Flashes',views),scard(isB?'Лайки (видео и посты)':'Лайки',fL+pL),scard('Комментарии',fC+pC),scard('Вовлечённость видео',pcn(fL+fC,views)),scard('Просмотров на Flash',F.length?Math.round(views/F.length):0),scard('Flashes',F.length)];
   if(isB)cards.unshift(scard('Подписчики',W.length));
   if(isB)cards.push(scard('Публикаций',Pp.length));
   box.innerHTML=(both?'<button class="back" data-oa="scback">← Назад</button>':'')+
-    `<div class="ofp"><h3>${esc(title)}</h3><p class="of-p">${isB?'Видео компании и их статистика. Flashes видны в общем Fresh и на странице компании.':'Твои Flashes и их статистика.'} За каждые 20 просмотров начисляется 1 монета, она сама приходит ${isB?'на счёт компании':'на твой личный счёт в Банке'}.</p><div class="of-bt"><button data-oa="upt">Загрузить Flash</button>${isB?`<button class="g" data-oa="blog" data-b="${bid}" data-n="${esc(biz.title)}">Страница компании</button>`:''}</div></div>`+upForm(bid)+
-    `<div class="of-g">${cards.join('')}</div>`+
+    `<div class="ofp"><h3>${esc(title)}</h3><p class="of-p">${isB?'Видео компании и их статистика. Flashes видны в общем Fresh и на странице компании.':'Твои Flashes и их статистика.'} За каждые 20 просмотров начисляется 1 коин, он сам приходит ${isB?'на счёт компании':'на твой личный счёт в Банке'}.</p><div class="of-bt"><button data-oa="upt">Загрузить Flash</button>${isB?`<button class="g" data-oa="blog" data-b="${bid}" data-n="${esc(biz.title)}">Страница компании</button>`:''}</div></div>`+upForm(bid)+
+    `<div class="of-g">${cards.join('')}</div>`+statsHtml(ST)+
     (isB?`<div class="ofp"><h3>Новые подписчики за 14 дней</h3>${chart(W.map(w=>({created_at:w.created_at,amount:1})))}</div>`:'')+
     `<div class="ofp"><h3>Flashes</h3>${F.map(x=>{const c=fc[x.id]||0;return `<div class="of-r"><span><b>${esc(x.title)}</b><small>${fd(x.created_at)} · ${x.views||0} просм. · ${x.likes||0} лайков · ${c} комм. · заработано ${mk(Math.floor((+x.views||0)/20))}</small></span><div class="of-bt" style="margin:0"><button class="g" data-oa="fl" data-id="${esc(x.id)}">Открыть</button><button class="g" data-oa="fdel" data-id="${esc(x.id)}">Удалить</button></div></div>`}).join('')||'<div class="of-em">Flashes пока нет</div>'}</div>`+
     (isB?`<div class="ofp"><h3>Публикации</h3>${Pp.map(x=>`<div class="of-r"><span><b>${esc((x.body||'').trim().slice(0,60)||'Фото')}</b><small>${fd(x.created_at)} · ${cn(x.post_likes)} лайков · ${cn(x.post_comments)} комм.</small></span></div>`).join('')||'<div class="of-em">Публикаций пока нет</div>'}</div>`:'');
@@ -426,9 +458,9 @@ async function team(){
     if(!canHire(m))h+='<div class="ofp"><h3>Команда</h3><p class="of-p">ИП на НПД работает один: на этом налоге нанимать сотрудников нельзя. Чтобы нанимать, открой ИП или ООО.</p></div>';
     else{
       const d=await R('biz_team',{bid:m.id});
-      h+=`<div class="ofp"><h3>Новая вакансия</h3><select id="of-vr">${(d.roles||[]).map(r=>`<option>${esc(r)}</option>`).join('')}</select><textarea id="of-vd" maxlength="500" placeholder="Что делать и что нужно уметь."></textarea><input class="of-in" id="of-vs" type="number" min="0" max="100000" placeholder="Зарплата в месяц, мк"><label style="display:flex;gap:8px;align-items:center;font-size:13px;margin:6px 0"><input type="checkbox" id="of-vn"> Зарплату можно обсудить</label><small>${lk(m)==='ip'?'ИП нанимает до 3 человек. ':''}Зарплата выплачивается раз в месяц со счёта проекта сама.</small><div class="of-bt"><button data-oa="vacmk">Опубликовать</button></div></div>`;
+      h+=`<div class="ofp"><h3>Новая вакансия</h3><select id="of-vr">${(d.roles||[]).map(r=>`<option>${esc(r)}</option>`).join('')}</select><textarea id="of-vd" maxlength="500" placeholder="Что делать и что нужно уметь."></textarea><input class="of-in" id="of-vs" type="number" min="0" max="100000" placeholder="Зарплата в месяц, коинов"><label style="display:flex;gap:8px;align-items:center;font-size:13px;margin:6px 0"><input type="checkbox" id="of-vn"> Зарплату можно обсудить</label><small>${lk(m)==='ip'?'ИП нанимает до 3 человек. ':''}Зарплата выплачивается раз в месяц со счёта проекта сама.</small><div class="of-bt"><button data-oa="vacmk">Опубликовать</button></div></div>`;
       h+='<div class="ofp"><h3>Открытые вакансии</h3>'+((d.vacs||[]).map(v=>`<div class="of-r"><span><span class="of-tag">${esc(v.role)}</span>${esc(v.descr)}<small>${mk(v.salary)} в месяц, ${v.negotiable?'можно обсудить':'без обсуждения'}</small></span><div class="of-bt" style="margin:0"><button class="g" data-oa="vacx" data-id="${v.id}">Закрыть</button></div></div>`).join('')||'<div class="of-em">Нет открытых вакансий</div>')+'</div>';
-      h+='<div class="ofp"><h3>Отклики</h3>'+((d.apps||[]).map(a=>`<div class="of-r" style="display:block"><b>${esc(a.name||'Без имени')}</b> <span class="of-tag">${esc(a.role)}</span><small>${esc(a.msg)}</small>${a.negotiable?`<small>Зарплата в вакансии: ${mk(a.salary)}, можно обсудить</small><input class="of-in" id="of-s${a.id}" type="number" min="0" value="${+a.salary||0}" placeholder="Договорённая зарплата в месяц, мк">`:`<small>Зарплата без обсуждения: ${mk(a.salary)} в месяц</small>`}<div class="of-bt"><button data-oa="yes" data-id="${a.id}">Принять</button><button class="g" data-oa="no" data-id="${a.id}">Отклонить</button></div></div>`).join('')||'<div class="of-em">Откликов пока нет</div>')+'</div>';
+      h+='<div class="ofp"><h3>Отклики</h3>'+((d.apps||[]).map(a=>`<div class="of-r" style="display:block"><b>${esc(a.name||'Без имени')}</b> <span class="of-tag">${esc(a.role)}</span><small>${esc(a.msg)}</small>${a.negotiable?`<small>Зарплата в вакансии: ${mk(a.salary)}, можно обсудить</small><input class="of-in" id="of-s${a.id}" type="number" min="0" value="${+a.salary||0}" placeholder="Договорённая зарплата в месяц, коинов">`:`<small>Зарплата без обсуждения: ${mk(a.salary)} в месяц</small>`}<div class="of-bt"><button data-oa="yes" data-id="${a.id}">Принять</button><button class="g" data-oa="no" data-id="${a.id}">Отклонить</button></div></div>`).join('')||'<div class="of-em">Откликов пока нет</div>')+'</div>';
       h+='<div class="ofp"><h3>Сотрудники</h3>'+((d.staff||[]).map(s=>`<div class="of-r"><span><b>${esc(s.name||'Без имени')}</b><small>${esc(s.role)}${s.salary?', '+mk(s.salary)+' в месяц':''}</small></span>${s.role==='Директор'&&!own()?'':`<div class="of-bt" style="margin:0"><button class="g" data-oa="end" data-id="${s.id}">Уволить</button></div>`}</div>`).join('')||'<div class="of-em">Пока никого</div>')+'</div>';
     }
   }
@@ -447,7 +479,7 @@ async function all(){
   $('#of-b').innerHTML=chips+`<input class="of-in" id="of-q" placeholder="Поиск по названию, владельцу или счёту" value="${esc(qAll)}"><div class="ofp">`+
     (f.map(b=>`<div class="of-r" style="display:block"><b>${esc(b.name)}</b> <span class="of-tag">${esc(KIND(b.kind))}</span><span class="of-tag">${esc(b.status)}</span>${b.frozen?'<span class="of-tag w">заморожен</span>':''}${b.debt>0?'<span class="of-tag w">штраф '+b.debt+'</span>':''}<small>Владелец: ${esc(b.owner_name||'—')}. Счёт: ${esc(b.acc||'нет')}. Баланс: ${mk(b.balance)}. ${esc(b.activity||'')}</small>`+
       (fineFor===b.id
-        ?`<input class="of-in" id="of-fa" type="number" min="1" placeholder="Сумма штрафа, мк"><input class="of-in" id="of-fr" maxlength="100" placeholder="Причина штрафа"><div class="of-bt"><button class="r" data-oa="fineok" data-b="${b.id}">Выписать штраф</button><button class="g" data-oa="finex">Отмена</button></div>`
+        ?`<input class="of-in" id="of-fa" type="number" min="1" placeholder="Сумма штрафа, коинов"><input class="of-in" id="of-fr" maxlength="100" placeholder="Причина штрафа"><div class="of-bt"><button class="r" data-oa="fineok" data-b="${b.id}">Выписать штраф</button><button class="g" data-oa="finex">Отмена</button></div>`
         :stF==='old'?`<div class="of-bt"><button class="r" data-oa="bizdel" data-b="${b.id}">Удалить из списка</button></div>`
         :`<div class="of-bt"><button class="g" data-oa="fin" data-b="${b.id}">Финансы</button><button class="g" data-oa="blog" data-b="${b.id}" data-n="${esc(b.name)}">Страница</button>${b.status==='active'?`<button class="g" data-oa="fine" data-b="${b.id}">Штраф</button>`:''}</div>`)+
       '</div>').join('')||'<div class="of-em">Ничего не найдено</div>')+'</div>';
@@ -457,7 +489,7 @@ async function all(){
 async function jobs(){
   const L=await R('biz_jobs');
   const lab={new:'Отклик отправлен',yes:'Принят',no:'Отклонён'};
-  $('#of-b').innerHTML=(!tabs().some(x=>x[0]==='home')?'<div class="ofp"><p class="of-p">Разделы про бизнес открываются владельцам бизнесов и их сотрудникам. Здесь можно найти работу в ИП или ООО, а во вкладке «Инструменты» есть программы для работы. Во вкладке «Студия» можно загружать свои Flashes и получать монеты за просмотры.</p></div>':'')+
+  $('#of-b').innerHTML=(!tabs().some(x=>x[0]==='home')?'<div class="ofp"><p class="of-p">Разделы про бизнес открываются владельцам бизнесов и их сотрудникам. Здесь можно найти работу в ИП или ООО, а во вкладке «Инструменты» есть программы для работы. Во вкладке «Студия» можно загружать свои Flashes и получать коины за просмотры.</p></div>':'')+
     (L.map(v=>`<div class="ofp"><h3>${esc(v.name)} <span class="of-tag">${esc(v.role)}</span></h3><p class="of-p">${esc(v.descr)}</p><small style="margin-top:6px"><b>${mk(v.salary)} в месяц</b>, ${v.negotiable?'можно обсудить':'без обсуждения'}</small>`+
       (v.my?`<small style="margin-top:8px">${lab[v.my]||''}</small>`
         :applyFor===v.id?`<textarea id="of-am" maxlength="500" placeholder="Расскажи о себе и опыте"></textarea><div class="of-bt"><button data-oa="send" data-id="${v.id}">Отправить</button><button class="g" data-oa="applyx">Отмена</button></div>`
