@@ -130,7 +130,7 @@ const TABS=[['feed','feed','Лента'],['msg','chat','Чат'],['fm','fresh','
 const TILES=[['office','office','MilkOffice'],['games','game','Игры'],['market','crown','Маркетплейс']];
 
 $('#bar').innerHTML='<nav class="tabs">'+TABS.map(t=>`<button class="tab" data-v="${t[0]}" aria-label="${t[2]}">${ic(t[1])}<span>${t[2]}</span>${t[0]==='msg'?'<b class="bd2 mgbd mgbd2" hidden>1</b>':''}</button>`).join('')+'</nav>'+
-  '<div class="side"><span class="mc"><span class="coin"></span><span class="cn">…</span></span><button class="myava" id="me" aria-label="Профиль"><img src="ava.jpg" alt=""></button></div>';
+  '<div class="side"><span class="mc"><span class="coin"></span><span class="cn">…</span></span><button class="myava" id="me" aria-label="Профиль"><span class="myl"></span><img alt=""></button></div>';
 $('#tiles').innerHTML=TILES.map(t=>`<button class="tile" data-v="${t[0]}"><i>${ic(t[1])}</i>${t[2]}</button>`).join('');
 
 /* ---------- переключение экранов ---------- */
