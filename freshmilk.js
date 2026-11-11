@@ -2,6 +2,8 @@
    Видео лежит на GitHub (его туда кладёт Edge Function upload-video),
    название, обложка и просмотры хранятся в таблице flashes (Supabase).
    Внизу панель: Главная / Flashes (лента) / История.
+   Статистика автора: кнопка «Статистика» на главной и на своём Flash в ленте
+   (нужен SQL из freshmilk_stats.sql).
    Все лимиты меняются здесь: */
 (function(){
 const LIM={
@@ -12,6 +14,7 @@ const LIM={
   titleMax:100, descMax:1000, tagsMax:10,
   freshMin:3     // сколько минут после загрузки видео «обрабатывается»
 };
+const COIN_VIEWS=20; // 1 монета за столько просмотров
 const FN='upload-video';
 const URL_OK=/^https:\/\/[a-z0-9-]+\.github\.io\//i;
 const COVER_OK=/^data:image\/jpeg;base64,[A-Za-z0-9+\/=]+$/;
@@ -22,7 +25,9 @@ const mmss=s=>Math.floor(s/60)+':'+String(Math.floor(s%60)).padStart(2,'0');
 const mb=b=>(b/1048576).toFixed(1).replace('.',',');
 const dt=s=>new Date(s).toLocaleDateString('ru-RU',{day:'numeric',month:'long'});
 const vw=n=>{n=n||0;if(n<1000)return String(n);if(n<1e6)return (n/1000).toFixed(1).replace('.',',')+' тыс.';return (n/1e6).toFixed(1).replace('.',',')+' млн'};
+const fmtN=n=>Number(n||0).toLocaleString('ru-RU');
 const pluralR=n=>{const a=n%10,b=n%100;return a===1&&b!==11?'ответ':(a>=2&&a<=4&&(b<12||b>14))?'ответа':'ответов'};
+const hue=s=>{let h=0;for(const ch of String(s||'?'))h=(h*31+ch.charCodeAt(0))%360;return h};
 
 /* ---------- иконки ---------- */
 const sv=(p,c)=>'<svg'+(c?' class="'+c+'"':'')+' viewBox="0 0 24 24" fill="currentColor"><path d="'+p+'"/></svg>';
@@ -48,6 +53,7 @@ st.textContent=`
 .fm-hero small svg{width:24px;height:24px}
 .fm-hero h1{font-weight:800;font-size:36px;color:#34404e;margin:6px 0 8px}
 .fm-hero p{font-size:14px;color:#7b838c;max-width:560px;line-height:1.5}
+.fm-hb{display:flex;gap:10px;flex-wrap:wrap}
 .fm-msg{margin-top:14px;padding:12px 18px;border-radius:16px;background:#e7f6e5;color:var(--ok);font-weight:600;font-size:13px}
 .fm-msg:empty{display:none}
 .fm-panel{background:rgba(255,255,255,.75);backdrop-filter:blur(10px);border-radius:25px;padding:22px;box-shadow:0 6px 30px rgba(0,0,0,.04);margin-top:18px}
@@ -69,18 +75,16 @@ st.textContent=`
 .fm-btn:disabled{background:#e9eef2;color:#a9b2bb}
 .fm-bar{margin:22px 0 4px}
 .fm-q{width:100%;height:46px;border:1px solid #e3e8ee;border-radius:18px;padding:0 18px;font:inherit;color:#566170;background:#fff;outline:0}
-.fm-g{display:grid;grid-template-columns:repeat(5,1fr);gap:16px;margin-top:14px}
-@media(max-width:640px){.fm-g{grid-template-columns:repeat(2,1fr)}}
-.fm-c{background:#fff;border-radius:22px;box-shadow:0 6px 30px rgba(0,0,0,.04);overflow:hidden;cursor:pointer}
-.fm-th{position:relative;aspect-ratio:9/16;background:#eaf6fd center top/cover no-repeat}
-.fm-th i{position:absolute;left:50%;top:50%;width:46px;height:46px;margin:-23px 0 0 -23px;border-radius:50%;background:rgba(255,255,255,.9);display:grid;place-items:center;opacity:0;transition:opacity .15s}
-.fm-th i::after{content:"";border-left:14px solid var(--cy);border-top:8px solid transparent;border-bottom:8px solid transparent;margin-left:4px}
-.fm-c:hover .fm-th i{opacity:1}
-.fm-du{position:absolute;right:8px;bottom:8px;background:rgba(20,40,60,.78);color:#fff;border-radius:10px;padding:2px 8px;font-size:11px;font-weight:600}
+
+/* сетка Flashes: без белой подложки, подпись внутри кадра внизу */
+.fm-g{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-top:14px}
+.fm-c{border-radius:16px;overflow:hidden;cursor:pointer;background:none;box-shadow:none;content-visibility:auto;contain-intrinsic-size:auto 240px;-webkit-tap-highlight-color:transparent}
+.fm-th{position:relative;aspect-ratio:9/16;background:#e4edf3 center top/cover no-repeat;overflow:hidden}
+.fm-du{position:absolute;right:8px;top:8px;background:rgba(20,40,60,.7);color:#fff;border-radius:10px;padding:2px 8px;font-size:11px;font-weight:600}
 .fm-nw{position:absolute;left:8px;top:8px;background:#fff4e0;color:#c9730f;border-radius:10px;padding:2px 8px;font-size:11px;font-weight:600}
-.fm-in{padding:12px 14px 14px}
-.fm-in b{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:14px;font-weight:600;line-height:1.3}
-.fm-in small{display:block;color:var(--mu);font-size:11px;margin-top:4px}
+.fm-ov{position:absolute;left:0;right:0;bottom:0;padding:34px 10px 9px;color:#fff;background:linear-gradient(to top,rgba(0,0,0,.6),rgba(0,0,0,.3) 55%,rgba(0,0,0,0));text-shadow:0 1px 3px rgba(0,0,0,.6)}
+.fm-ov b{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:13px;font-weight:700;line-height:1.25}
+.fm-ov small{display:block;margin-top:3px;font-size:11px;opacity:.92;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .fm-tg{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
 .fm-tg span{background:var(--pl);color:var(--bt);border-radius:10px;padding:2px 9px;font-size:11px;font-weight:600;cursor:pointer}
 .fm-ds{font-size:14px;line-height:1.6;color:#566170;margin-top:12px}
@@ -89,14 +93,14 @@ st.textContent=`
 .fm-tabs button.on{background:#34404e;color:#fff}
 
 /* нижняя панель */
-.fm-nav{position:fixed;left:0;right:0;bottom:0;height:56px;z-index:1000;display:flex;justify-content:center;background:#fff;border-top:1px solid #e3e8ee}
+.fm-nav{position:fixed;left:0;right:0;bottom:0;height:calc(56px + env(safe-area-inset-bottom,0px));padding-bottom:env(safe-area-inset-bottom,0px);box-sizing:border-box;z-index:1000;display:flex;justify-content:center;background:#fff;border-top:1px solid #e3e8ee}
 .fm-nav button{flex:1;max-width:220px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:#566170;font-size:11px;font-weight:600}
 .fm-nav svg{width:24px;height:24px}
 .fm-nav button.on{color:var(--cy)}
 body.menu .fm-nav{display:none}
 
 /* лента Flashes */
-#fm-feed{position:fixed;left:0;right:0;top:0;bottom:56px;z-index:998;background:#0a0e14}
+#fm-feed{position:fixed;left:0;right:0;top:0;bottom:calc(56px + env(safe-area-inset-bottom,0px));z-index:998;background:#0a0e14}
 #fm-feed[hidden]{display:none}
 .fm-fe{height:100%;display:grid;place-items:center;color:#fff;text-align:center;padding:24px;font-weight:600}
 .fm-sc{position:relative;height:100%;overflow-y:auto;scroll-snap-type:y mandatory;overscroll-behavior:contain;scrollbar-width:none}
@@ -104,17 +108,28 @@ body.menu .fm-nav{display:none}
 .fm-it{height:100%;box-sizing:border-box;padding:6px 0;scroll-snap-align:start;scroll-snap-stop:always;display:flex;align-items:center;justify-content:center}
 .fm-pv{position:relative;height:100%;aspect-ratio:9/16;max-width:100%;border-radius:20px;overflow:hidden;background:#000}
 .fm-pv video{width:100%;height:100%;object-fit:cover;object-position:top;display:block;cursor:pointer}
+/* мягкое затемнение только снизу и на всю ширину: без резкого края справа, белые видео не грязнятся */
+.fm-pv::after{content:"";position:absolute;left:0;right:0;bottom:0;height:44%;pointer-events:none;z-index:1;background:linear-gradient(to top,rgba(0,0,0,.5) 0%,rgba(0,0,0,.4) 22%,rgba(0,0,0,.22) 50%,rgba(0,0,0,.08) 78%,rgba(0,0,0,0) 100%)}
 @media(max-width:640px){.fm-it{padding:0}.fm-pv{border-radius:0}}
 .fm-pe{position:absolute;inset:0;display:grid;place-items:center;padding:24px;text-align:center;color:#fff;font-weight:600;background:rgba(0,0,0,.7);z-index:1}
 .fm-pe[hidden]{display:none}
-.fm-dl{position:absolute;top:10px;left:10px;z-index:3;height:34px;padding:0 16px;font-size:13px}
-.fm-bt{position:absolute;left:0;right:64px;bottom:0;padding:50px 14px 16px;color:#fff;background:linear-gradient(transparent,rgba(0,0,0,.7));z-index:2}
-.fm-au{font-weight:700;font-size:15px}
-.fm-tt{display:block;margin-top:6px;font-size:14px;font-weight:600;cursor:pointer}
+.fm-own{position:absolute;top:10px;left:10px;z-index:3;display:flex;gap:8px}
+.fm-own .fm-btn{height:34px;padding:0 14px;font-size:13px;background:rgba(0,0,0,.45);color:#fff;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.fm-own .fm-btn.r{background:#e5314a}
+.fm-bt{position:absolute;left:0;right:64px;bottom:0;padding:20px 14px 16px;color:#fff;z-index:2;text-shadow:0 1px 3px rgba(0,0,0,.75),0 0 8px rgba(0,0,0,.35)}
+.fm-au{display:flex;align-items:center;gap:10px;font-weight:700;font-size:15px}
+.fm-an{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fm-ab{position:relative;flex:none;width:36px;height:36px;text-shadow:none}
+.fm-aa{display:grid;place-items:center;width:36px;height:36px;border-radius:50%;background-size:cover;background-position:center;color:#fff;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 0 0 1.5px rgba(255,255,255,.9),0 1px 6px rgba(0,0,0,.45)}
+.fm-plus{position:absolute;right:-5px;bottom:-5px;width:20px;height:20px;box-sizing:border-box;border-radius:50%;background:var(--cy);border:2px solid #fff;cursor:pointer;font-size:0;box-shadow:0 1px 4px rgba(0,0,0,.4)}
+.fm-plus::before,.fm-plus::after{content:"";position:absolute;left:50%;top:50%;background:#fff;border-radius:1px;transform:translate(-50%,-50%)}
+.fm-plus::before{width:8px;height:2px}
+.fm-plus::after{width:2px;height:8px}
+.fm-tt{display:block;margin-top:8px;font-size:14px;font-weight:600;cursor:pointer}
 .fm-bt .fm-tg span{background:none;color:#fff;padding:0;margin-right:4px}
-.fm-side{position:absolute;right:8px;bottom:80px;display:flex;flex-direction:column;gap:18px;align-items:center;color:#fff;z-index:2;font-size:12px;font-weight:600;text-align:center}
+.fm-side{position:absolute;right:8px;bottom:80px;display:flex;flex-direction:column;gap:18px;align-items:center;color:#fff;z-index:2;font-size:12px;font-weight:600;text-align:center;text-shadow:0 1px 3px rgba(0,0,0,.75),0 0 8px rgba(0,0,0,.4)}
 .fm-lk{display:flex;flex-direction:column;align-items:center;gap:4px;color:#fff}
-.fm-lk svg{width:30px;height:30px}
+.fm-lk svg{width:30px;height:30px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.65)) drop-shadow(0 0 5px rgba(0,0,0,.4))}
 .fm-lk.on{color:#3fc3ee}
 
 /* панель комментариев и описания */
@@ -158,7 +173,56 @@ body.menu .fm-nav{display:none}
 .fm-ho b{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:13px;font-weight:700;line-height:1.25}
 .fm-ho small{display:block;margin-top:3px;font-size:11px;opacity:.9}
 .fm-hx{position:absolute;top:6px;right:6px;width:26px;height:26px;border-radius:50%;background:rgba(0,0,0,.45);color:#fff;font-size:12px;z-index:2}
-@media(max-width:640px){.fm-hero{padding:22px 20px}.fm-hero h1{font-size:28px}}`;
+
+/* статистика */
+#fm-stats{padding-top:6px}
+.fm-sh{display:flex;align-items:center;gap:12px;margin:12px 0 4px}
+.fm-sh h1{flex:1;min-width:0;font-size:26px;font-weight:800;color:#34404e;overflow-wrap:anywhere}
+.fm-sp{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+.fm-sp button{height:34px;padding:0 14px;border-radius:17px;background:#fff;color:#566170;font-weight:600;font-size:13px}
+.fm-sp button.on{background:#34404e;color:#fff}
+.fm-kp{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.fm-k{background:#fff;border-radius:18px;padding:14px;box-shadow:0 6px 30px rgba(0,0,0,.04)}
+.fm-k b{display:block;font-size:22px;font-weight:800;color:#34404e}
+.fm-k small{color:var(--mu);font-size:12px}
+.fm-box{background:#fff;border-radius:22px;padding:16px;margin-top:14px;box-shadow:0 6px 30px rgba(0,0,0,.04)}
+.fm-box h3{font-size:16px;font-weight:800;margin:0 0 6px;color:#34404e}
+.fm-box .fm-ds{margin:0 0 10px;font-size:13px}
+.fm-hl{font-size:15px;color:#34404e;line-height:1.5}
+.fm-hl b{color:#e5314a}
+.fm-cv{display:block;width:100%;height:130px;overflow:visible}
+.fm-cv polyline{fill:none;stroke:var(--cy);stroke-width:2.5;vector-effect:non-scaling-stroke;stroke-linejoin:round}
+.fm-cv polygon{fill:rgba(63,195,238,.16)}
+.fm-cv line{vector-effect:non-scaling-stroke}
+.fm-bl{display:flex;justify-content:space-between;color:var(--mu);font-size:11.5px;margin-top:6px;gap:8px}
+.fm-bs{display:flex;align-items:flex-end;gap:3px;height:120px}
+.fm-b1{flex:1;min-width:4px;height:100%;display:flex;align-items:flex-end}
+.fm-b1 i{display:block;width:100%;background:#9fdcf3;border-radius:4px 4px 0 0}
+.fm-b1.top i{background:var(--cy)}
+.fm-bt3{margin-top:12px;display:grid;gap:6px;font-size:13px;color:#566170}
+.fm-bt3 b{color:#34404e}
+.fm-ir{display:flex;align-items:center;gap:10px;width:100%;padding:12px 0;text-align:left;color:#34404e;border-top:1px solid #eef1f4}
+.fm-ir:first-of-type{border-top:0}
+.fm-iq{flex:1;min-width:0}
+.fm-iq b{display:block;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fm-iq small{display:block;color:var(--mu);font-size:12px;margin-top:3px}
+
+@media(max-width:900px){.fm-g{grid-template-columns:repeat(4,1fr)}}
+@media(max-width:640px){
+  .fm-hero{padding:20px;border-radius:22px}.fm-hero h1{font-size:26px}
+  .fm-panel{padding:16px;border-radius:20px}
+  .fm-g{grid-template-columns:repeat(3,1fr);gap:6px}
+  .fm-c{border-radius:12px}
+  .fm-ov{padding:22px 6px 6px}
+  .fm-ov b{font-size:11px;line-height:1.2}
+  .fm-ov small{font-size:9.5px;margin-top:2px}
+  .fm-du{right:5px;top:5px;font-size:9px;padding:1px 6px}
+  .fm-nw{left:5px;top:5px;font-size:8.5px;padding:1px 6px}
+  .fm-hc{width:112px}
+  .fm-ho{padding:28px 7px 7px}.fm-ho b{font-size:11.5px}.fm-ho small{font-size:10px}
+  .fm-kp{grid-template-columns:repeat(2,1fr)}
+  .fm-sh h1{font-size:21px}
+}`;
 document.head.appendChild(st);
 
 const sec=document.createElement('section');
@@ -169,7 +233,10 @@ document.querySelector('.main').appendChild(sec);
 let list=[],q='',hq='',uid=null,loadErr=false,loaded=false,msgT=null;
 let tab='all',view='home',io=null;
 let openId=null,cms=[],cmFor=null,cmMode='c',cmParent=null,cmNew=true,myVotes={};
+let stP='week',stF=null,stTk=0,feedTk=0,cur=null,sgP=null;
 const extra={},ccount={},seen=new Set(),likedSet=new Set();
+const profMap={},followSet=new Set(),fKnown=new Set();
+const sg={w:{},l:likedSet,c:new Set()};
 const byId=id=>list.find(a=>String(a.id)===String(id))||extra[id];
 const ready=()=>new Promise(ok=>{
   if(window.SB)return ok(window.SB);
@@ -227,11 +294,11 @@ const imgCover=f=>new Promise((ok,no)=>{
 
 /* ---------- страница ---------- */
 function shell(){
-  view='home';openId=null;cmFor=null;cmMode='c';cmParent=null;
+  view='home';openId=null;cmFor=null;cmMode='c';cmParent=null;cur=null;
   if(io){io.disconnect();io=null}
   sec.innerHTML=`<div id="fm-home"><div class="fm-hero"><div><small>${window.MS?MS.ic('fresh'):''}Видео</small><h1>Fresh</h1>
     <p>Короткие вертикальные видео: до ${LIM.maxSec} секунд, качество до ${LIM.maxSide}p. Квадратные тоже подходят.</p></div>
-    <button class="sw" id="fm-new">Загрузить Flash</button></div>
+    <div class="fm-hb"><button class="sw" id="fm-new">Загрузить Flash</button><button class="sw" id="fm-stbtn">Статистика</button></div></div>
     <div class="fm-msg" id="fm-msg"></div>
     <div class="fm-panel" id="fm-up" hidden>
       <div class="fm-rules">До ${LIM.maxSec} секунд, до ${LIM.maxMB} МБ, вертикальное или квадратное, не выше ${LIM.maxSide}p (720×1280), формат mp4 или mov. Чтобы видео прошло, сними его в настройках камеры в качестве HD (720p).</div>
@@ -257,34 +324,44 @@ function shell(){
     <div id="fm-list"></div></div>
     <div id="fm-feed" hidden></div>
     <div id="fm-hist" hidden></div>
+    <div id="fm-stats" hidden></div>
     <nav class="fm-nav"><button data-nav="home" class="on">${IC.home}Главная</button><button data-nav="feed">${IC.bolt}Flashes</button><button data-nav="hist">${IC.hist}История</button></nav>`;
-  $('#fm-feed').addEventListener('error',ev=>{
+  const fe=$('#fm-feed');
+  fe.addEventListener('error',ev=>{
     if(ev.target.tagName==='VIDEO'){const pe=ev.target.parentNode.querySelector('.fm-pe');if(pe)pe.hidden=false}
+  },true);
+  /* до какой секунды человек досмотрел текущий Flash */
+  fe.addEventListener('timeupdate',ev=>{
+    const v=ev.target;if(!cur||v.tagName!=='VIDEO')return;
+    const it=v.closest('.fm-it');
+    if(it&&it.dataset.id===cur.id&&v.currentTime>cur.max)cur.max=v.currentTime;
   },true);
   initUpload();
 }
 
 function setView(v,startId){
   if(!$('#fm-home'))return;
+  if(view==='feed'&&v!=='feed')flush();
   view=v;
   $('#fm-home').hidden=v!=='home';
   $('#fm-feed').hidden=v!=='feed';
   $('#fm-hist').hidden=v!=='hist';
+  $('#fm-stats').hidden=v!=='stats';
   sec.querySelectorAll('[data-nav]').forEach(b=>b.classList.toggle('on',b.dataset.nav===v));
   if(v!=='feed'){
     if(io){io.disconnect();io=null}
     $('#fm-feed').innerHTML='';openId=null;cmFor=null;
   }
-  if(v==='feed')buildFeed(startId);
+  if(v==='feed'){sgP=null;buildFeed(startId)}
   if(v==='hist')renderHist();
   if(v==='home')paint();
+  if(v==='stats')renderStats();
   window.scrollTo(0,0);
 }
 
 const bg=c=>COVER_OK.test(c||'')?` style="background-image:url('${c}')"`:'';
-const card=x=>`<div class="fm-c" data-o="${esc(x.id)}"><div class="fm-th"${bg(x.cover)}>${fresh(x)?'<span class="fm-nw">Обрабатывается</span>':''}<i></i><span class="fm-du">${mmss(x.dur)}</span></div>
-  <div class="fm-in"><b>${esc(x.title)}</b><small>${esc(x.author)}</small><small>${x.views||0} просм., ${dt(x.created_at)}</small>
-  ${(x.tags||[]).length?`<div class="fm-tg">${x.tags.slice(0,3).map(t=>`<span data-tag="${esc(t)}">#${esc(t)}</span>`).join('')}</div>`:''}</div></div>`;
+const card=x=>`<div class="fm-c" data-o="${esc(x.id)}"><div class="fm-th"${bg(x.cover)}>${fresh(x)?'<span class="fm-nw">Обработка</span>':''}<span class="fm-du">${mmss(x.dur)}</span>
+  <div class="fm-ov"><b>${esc(x.title)}</b><small>${esc(x.author)} · ${vw(x.views)} просм.</small></div></div></div>`;
 
 function paint(){
   const box=$('#fm-list');if(!box)return;
@@ -315,6 +392,8 @@ async function loadList(){
       else{paint();addToFeed(rows)}
       if(rows.length<PAGE)break;
       from+=PAGE;
+      await new Promise(ok=>setTimeout(ok,250));
+      if(tk!==loadTk)return;
     }
   }catch(e){
     if(tk!==loadTk)return;
@@ -325,10 +404,12 @@ async function loadList(){
 function addToFeed(rows){
   const sc=$('#fm-sc');if(!sc||!io)return;
   const have=new Set([...sc.children].map(c=>c.dataset.id));
-  rows.filter(x=>URL_OK.test(x.url||'')&&!have.has(String(x.id))).forEach(x=>{
+  const add=rows.filter(x=>URL_OK.test(x.url||'')&&!have.has(String(x.id)));
+  add.forEach(x=>{
     sc.insertAdjacentHTML('beforeend',item(x));
     io.observe(sc.lastElementChild);
   });
+  if(add.length)loadAuthors(add);
 }
 
 /* ---------- загрузка ---------- */
@@ -408,24 +489,137 @@ function initUpload(){
   };
 }
 
+/* ---------- автор: аватарка и плюсик подписки ---------- */
+const canFollow=id=>!!(uid&&id&&id!==uid&&fKnown.has(id)&&!followSet.has(id));
+const avInner=(id,nm)=>{
+  const p=profMap[id]||{},url=p.avatar_url;
+  const s=`background-color:hsl(${hue(nm)},55%,48%);`+(url?`background-image:url('${esc(url)}')`:'');
+  return `<span class="fm-aa" data-prof="${esc(id)}" style="${s}">${url?'':esc(String(nm||'?').trim().charAt(0).toUpperCase())}</span>`
+    +(canFollow(id)?`<b class="fm-plus" data-fol="${esc(id)}">+</b>`:'');
+};
+function paintAuthor(id){
+  sec.querySelectorAll('.fm-ab').forEach(e=>{if(e.dataset.au===id)e.innerHTML=avInner(id,e.dataset.nm)});
+}
+async function loadAuthors(rows){
+  const S=await ready();if(!S)return;
+  if(!uid){try{const u=await S.auth.getUser();uid=u.data&&u.data.user?u.data.user.id:null}catch(e){}}
+  const ids=[...new Set(rows.map(x=>x.user_id).filter(Boolean).map(String))];
+  const need=ids.filter(i=>!(i in profMap));
+  const ch=a=>{const o=[];for(let i=0;i<a.length;i+=80)o.push(a.slice(i,i+80));return o};
+  try{
+    await Promise.all(ch(need).map(async c=>{
+      const r=await S.from('profiles').select('id,avatar_url').in('id',c);
+      (r.data||[]).forEach(p=>{profMap[String(p.id)]=p});
+      c.forEach(i=>{if(!(i in profMap))profMap[i]={}});
+    }));
+    if(uid){
+      await Promise.all(ch(ids).map(async c=>{
+        const r=await S.from('follows').select('followee').eq('follower',uid).in('followee',c);
+        if(r.error)return;
+        (r.data||[]).forEach(o=>followSet.add(String(o.followee)));
+        c.forEach(i=>fKnown.add(i));
+      }));
+    }
+  }catch(e){}
+  ids.forEach(paintAuthor);
+}
+
+/* ---------- рекомендации: что смотрел, где держал внимание, лайки, комментарии ---------- */
+function loadSig(){
+  if(sgP)return sgP;
+  return sgP=(async()=>{
+    const S=await ready();if(!S)return;
+    if(!uid){try{const u=await S.auth.getUser();uid=u.data&&u.data.user?u.data.user.id:null}catch(e){}}
+    if(!uid)return;
+    try{
+      const [a,b,c]=await Promise.all([
+        S.from('flash_watch').select('flash_id,sec,dur').eq('user_id',uid).order('created_at',{ascending:false}).limit(400),
+        S.from('flash_likes').select('flash_id').eq('user_id',uid).limit(500),
+        S.from('flash_comments').select('flash_id').eq('user_id',uid).limit(300)]);
+      (a.data||[]).forEach(o=>{
+        const id=String(o.flash_id),f=o.dur>0?Math.min(1,o.sec/o.dur):0;
+        sg.w[id]=Math.max(sg.w[id]||0,f);
+      });
+      (b.data||[]).forEach(o=>likedSet.add(String(o.flash_id)));
+      (c.data||[]).forEach(o=>sg.c.add(String(o.flash_id)));
+    }catch(e){}
+  })();
+}
+function rank(items){
+  const tg={},au={};
+  const add=(x,w)=>{
+    (x.tags||[]).forEach(t=>{tg[t]=(tg[t]||0)+w});
+    if(x.user_id)au[x.user_id]=(au[x.user_id]||0)+w;
+  };
+  Object.keys(sg.w).forEach(id=>{
+    const x=byId(id);if(!x)return;
+    const f=sg.w[id];
+    add(x,f>=.8?2:f>=.4?1:f<.15?-1:0);   /* досмотрел: плюс, бросил сразу: минус */
+  });
+  likedSet.forEach(id=>{const x=byId(id);if(x)add(x,3)});
+  sg.c.forEach(id=>{const x=byId(id);if(x)add(x,4)});
+  const now=Date.now();
+  return items.map(x=>{
+    const id=String(x.id),w=sg.w[id];
+    let s=0;
+    (x.tags||[]).forEach(t=>{s+=Math.max(-3,Math.min(6,tg[t]||0))*.6});
+    s+=Math.max(-3,Math.min(8,au[x.user_id]||0))*.8;
+    s+=Math.log10((x.views||0)+10)*.8+Math.log10((x.likes||0)+1)*.6;
+    s+=Math.max(0,3-(now-new Date(x.created_at))/864e5/3)*.5;
+    if(w!=null)s-=3+w*2;                  /* уже смотрел: ниже в ленте */
+    if(likedSet.has(id))s-=1;
+    s+=Math.random()*1.2;
+    return {x,s};
+  }).sort((a,b)=>b.s-a.s).map(a=>a.x);
+}
+
+/* ---------- запись просмотра для статистики ---------- */
+function startCur(id){
+  const x=byId(id);
+  cur={id:String(id),sid:Math.random().toString(36).slice(2)+Date.now().toString(36),max:0,t0:Date.now(),sent:-1,dur:x&&+x.dur?+x.dur:0};
+}
+function sendCur(c){
+  if(!c||Date.now()-c.t0<800)return;
+  const sec=Math.round(c.max*10)/10;
+  if(sec===c.sent)return;
+  c.sent=sec;
+  ready().then(S=>S&&S.rpc('flash_watch_log',{p_fid:c.id,p_s:sec,p_sid:c.sid})).catch(()=>{});
+}
+function flush(){
+  const c=cur;if(!c)return;
+  cur=null;
+  if(Date.now()-c.t0<800)return;
+  sendCur(c);
+  if(c.dur)sg.w[c.id]=Math.max(sg.w[c.id]||0,Math.min(1,c.max/c.dur));
+}
+setInterval(()=>{if(cur)sendCur(cur)},5000);
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&cur)sendCur(cur)});
+window.addEventListener('pagehide',()=>{if(cur)sendCur(cur)});
+
 /* ---------- лента Flashes ---------- */
 const item=x=>{
-  const mine=uid&&x.user_id===uid,id=esc(x.id);
+  const mine=uid&&x.user_id===uid,id=esc(x.id),au=x.user_id?String(x.user_id):'';
+  const abv=au?`<span class="fm-ab" data-au="${esc(au)}" data-nm="${esc(x.author)}">${avInner(au,x.author)}</span>`:'';
   return `<div class="fm-it" data-id="${id}"><div class="fm-pv"><video data-src="${esc(x.url)}" preload="none" loop playsinline></video>
   <div class="fm-pe" hidden>Видео ещё обрабатывается. Подожди минуту-две и открой снова.</div>
-  ${mine?'<button class="fm-btn g fm-dl" data-del>Удалить</button>':''}
+  ${mine?'<div class="fm-own"><button class="fm-btn g" data-fst>Статистика</button><button class="fm-btn g" data-del>Удалить</button></div>':''}
   <div class="fm-side"><button class="fm-lk${likedSet.has(String(x.id))?' on':''}" data-like>${IC.like}<span data-ln="${id}">${x.likes||0}</span></button>
   <button class="fm-lk" data-cm>${IC.cm}<span data-cn="${id}">${ccount[x.id]||0}</span></button>
   <div data-vn="${id}">${x.views||0} просм.</div></div>
-  <div class="fm-bt"><div class="fm-au">${esc(x.author)}</div><b class="fm-tt" data-info>${esc(x.title)}</b>
+  <div class="fm-bt"><div class="fm-au"><span class="fm-an">${esc(x.author)}</span>${abv}</div><b class="fm-tt" data-info>${esc(x.title)}</b>
   ${(x.tags||[]).length?`<div class="fm-tg">${x.tags.map(t=>`<span data-tag="${esc(t)}">#${esc(t)}</span>`).join('')}</div>`:''}</div></div></div>`;
 };
 
-function buildFeed(startId){
+async function buildFeed(startId){
   const fe=$('#fm-feed');if(!fe)return;
+  const tk=++feedTk;
+  flush();
   if(io){io.disconnect();io=null}
   openId=null;cmFor=null;
-  const items=list.filter(x=>URL_OK.test(x.url||''));
+  if(!$('#fm-sc'))fe.innerHTML='<div class="fm-fe">Загружаем…</div>';
+  await Promise.race([loadSig(),new Promise(ok=>setTimeout(ok,1200))]);
+  if(tk!==feedTk||view!=='feed'||!$('#fm-feed'))return;
+  const items=rank(list.filter(x=>URL_OK.test(x.url||'')));
   if(startId!=null&&!items.some(x=>String(x.id)===String(startId))){
     const ex=extra[startId];if(ex&&URL_OK.test(ex.url||''))items.unshift(ex);
   }
@@ -448,12 +642,13 @@ function buildFeed(startId){
       fe.querySelectorAll('.fm-it').forEach(it=>{if(likedSet.has(it.dataset.id)){const b=it.querySelector('[data-like]');if(b)b.classList.add('on')}});
     }
   }).catch(()=>{});
+  loadAuthors(items);
 }
 
 const loadVid=v=>{if(!v.getAttribute('src'))v.src=v.dataset.src};
 function activate(it){
   const id=it.dataset.id,v=it.querySelector('video'),x=byId(id);
-  if(openId!==id){openId=id;closePanel()}
+  if(openId!==id){flush();startCur(id);openId=id;closePanel()}
   loadVid(v);
   const p=v.play();if(p&&p.catch)p.catch(()=>{v.muted=true;v.play().catch(()=>{})});
   const nx=it.nextElementSibling;
@@ -478,9 +673,8 @@ async function countCm(id){
 
 /* ---------- комментарии ---------- */
 const ava=n=>{
-  const s=String(n||'?').trim()||'?';let h=0;
-  for(const ch of s)h=(h*31+ch.charCodeAt(0))%360;
-  return `<span class="fm-av" style="background:hsl(${h},55%,48%)">${esc(s.charAt(0).toUpperCase())}</span>`;
+  const s=String(n||'?').trim()||'?';
+  return `<span class="fm-av" style="background:hsl(${hue(s)},55%,48%)">${esc(s.charAt(0).toUpperCase())}</span>`;
 };
 const kids=id=>cms.filter(c=>c.parent_id&&String(c.parent_id)===String(id))
   .sort((a,b)=>new Date(a.created_at)-new Date(b.created_at));
@@ -590,13 +784,109 @@ function paintHist(){
     +'<div class="fm-row"><button class="fm-btn g" data-hclear>Очистить историю</button></div>';
 }
 
+/* ---------- статистика автора ---------- */
+const MON=['янв','фев','мар','апр','мая','июн','июл','авг','сен','окт','ноя','дек'];
+const bkOf=p=>p==='week'||p==='month'?'day':p==='quarter'?'week':'month';
+const bLabel=(t,bk)=>{
+  const d=new Date(t+'T00:00:00');if(isNaN(d))return t;
+  if(bk==='month')return d.toLocaleDateString('ru-RU',{month:'long',year:'numeric'}).replace(' г.','');
+  const s=d.getDate()+' '+MON[d.getMonth()];
+  return bk==='week'?'неделя с '+s:s;
+};
+function openStats(fid){
+  stF=fid==null?null:String(fid);
+  setView('stats');
+}
+function barsHtml(tl,bk){
+  if(!tl||!tl.length)return '<div class="fr">Пока нет данных за этот период.</div>';
+  const mx=Math.max(...tl.map(o=>o.v))||1,bi=tl.findIndex(o=>o.v===mx);
+  const best={month:'Лучший месяц',week:'Лучшая неделя',day:'Лучший день'}[bk];
+  const top=tl.slice().sort((a,b)=>b.v-a.v).slice(0,3);
+  return `<div class="fm-bs">${tl.map((o,i)=>`<div class="fm-b1${i===bi?' top':''}" title="${esc(bLabel(o.t,bk))}: ${o.v}"><i style="height:${Math.max(3,Math.round(o.v/mx*100))}%"></i></div>`).join('')}</div>
+  <div class="fm-bl"><span>${esc(bLabel(tl[0].t,bk))}</span><span>${esc(bLabel(tl[tl.length-1].t,bk))}</span></div>
+  <div class="fm-bt3"><div>${best}: <b>${esc(bLabel(tl[bi].t,bk))}</b></div>${top.map((o,i)=>`<div>${i+1}. ${esc(bLabel(o.t,bk))}: ${fmtN(o.v)} просм., ≈ ${fmtN(Math.floor(o.v/COIN_VIEWS))} мон.</div>`).join('')}</div>`;
+}
+function curveHtml(cv,single,dropS){
+  const pts=(cv||[]).filter(o=>o.p!=null);
+  if(pts.length<2)return '<div class="fr">Пока мало данных.</div>';
+  const W=300,H=110,n=pts.length-1;
+  const X=i=>Math.round(i/n*W*10)/10,Y=p=>Math.round((H-p/100*H)*10)/10;
+  const line=pts.map((o,i)=>X(i)+','+Y(o.p)).join(' ');
+  let mark='';
+  if(single&&dropS!=null){
+    const idx=pts.findIndex(o=>o.s===dropS);
+    if(idx>=0)mark=`<line x1="${X(idx)}" x2="${X(idx)}" y1="0" y2="${H}" stroke="#e5314a" stroke-width="1.5" stroke-dasharray="4 3"/>`;
+  }
+  const last=pts[pts.length-1].s;
+  return `<svg class="fm-cv" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none"><polygon points="0,${H} ${line} ${W},${H}"/><polyline points="${line}"/>${mark}</svg>
+  <div class="fm-bl"><span>${single?'0 с':'начало'}</span><span>${single?last+' с':'конец видео'}</span></div>`;
+}
+async function renderStats(){
+  const box=$('#fm-stats');if(!box)return;
+  const tk=++stTk,single=stF!=null,x=single?byId(stF):null;
+  const pers=[['week','Неделя'],['month','Месяц'],['quarter','3 месяца'],['year','Год'],['all','Всё время']];
+  box.innerHTML=`<div class="fm-sh"><button class="fm-btn g" data-sback>← Назад</button><h1>${single?esc(x?x.title:'Flash'):'Статистика'}</h1></div>
+  <div class="fm-sp">${pers.map(p=>`<button data-sp="${p[0]}" class="${stP===p[0]?'on':''}">${p[1]}</button>`).join('')}</div>
+  <div id="fm-sb"><div class="fr">Загружаем…</div></div>`;
+  const S=await ready();if(tk!==stTk)return;
+  const sb=$('#fm-sb');if(!sb)return;
+  if(!S){sb.innerHTML='<div class="fr">Нет связи с сервером. Обнови страницу.</div>';return}
+  let r;
+  try{r=await S.rpc('flash_stats',{p_fid:single?String(stF):null,p_per:stP})}catch(e){r={error:e}}
+  if(tk!==stTk)return;
+  if(r.error){
+    sb.innerHTML='<div class="fr">'+(/flash_stats|function|schema cache|flash_watch/i.test(String(r.error.message||r.error))?'Сначала выполни SQL для статистики в Supabase.':'Не удалось загрузить статистику. Попробуй ещё раз.')+'</div>';
+    return;
+  }
+  const d=r.data;
+  if(!d||d.error==='login'){sb.innerHTML='<div class="fr">Войди в аккаунт, чтобы видеть статистику.</div>';return}
+  const bk=bkOf(stP);
+  const cards=[['Просмотры',fmtN(d.views)],['Монеты ≈',fmtN(Math.floor((d.views||0)/COIN_VIEWS))],['Удержание',d.avg_pct+'%'],['Досмотрели',d.done+'%'],['Ср. время',d.avg_sec+' с'],['Лайки (всего)',fmtN(d.likes)],['Комментарии',fmtN(d.comments)]];
+  let h=`<div class="fm-kp">${cards.map(c=>`<div class="fm-k"><b>${c[1]}</b><small>${c[0]}</small></div>`).join('')}</div>`;
+  if(!d.views){
+    h+='<div class="fm-box"><div class="fr">За этот период просмотров пока нет. Статистика считается чужими просмотрами и копится с момента подключения.</div></div>';
+  }else{
+    if(single&&d.drop_s!=null)h+=`<div class="fm-box fm-hl">Чаще всего зрители уходят на <b>${d.drop_s}-й секунде</b> (${d.drop_p}% просмотров)</div>`;
+    h+=`<div class="fm-box"><h3>Удержание</h3><p class="fm-ds">${single?'Сколько зрителей ещё смотрит на каждой секунде. Красная линия: самый частый момент ухода.':'Сколько зрителей доходит до каждой части видео, в среднем по всем Flash.'}</p>${curveHtml(d.curve,single,d.drop_s)}</div>`;
+    h+=`<div class="fm-box"><h3>Просмотры по времени</h3>${barsHtml(d.timeline,bk)}</div>`;
+  }
+  if(!single&&d.items&&d.items.length){
+    h+=`<div class="fm-box"><h3>Каждый Flash</h3>${d.items.map(o=>`<button class="fm-ir" data-sf="${esc(o.id)}"><span class="fm-iq"><b>${esc(o.title)}</b><small>${fmtN(o.views)} просм. · удержание ${o.pct}% · ${o.drop_s!=null?'уходят на '+o.drop_s+' с':'уходов пока нет'}</small></span><span>›</span></button>`).join('')}</div>`;
+  }
+  h+=`<div class="fm-info">Монеты: 1 за каждые ${COIN_VIEWS} просмотров. Свои просмотры не считаются.</div>`;
+  sb.innerHTML=h;
+}
+
 /* ---------- клики ---------- */
 sec.addEventListener('click',async e=>{
   const t=e.target;
   const nv=t.closest('[data-nav]');
   if(nv)return setView(nv.dataset.nav);
+  if(t.closest('#fm-stbtn'))return openStats(null);
+  const fst=t.closest('[data-fst]');
+  if(fst){const it=fst.closest('.fm-it');if(it)openStats(it.dataset.id);return}
+  if(t.closest('[data-sback]')){if(stF!=null){stF=null;return renderStats()}return setView('home')}
+  const sp=t.closest('[data-sp]');
+  if(sp){stP=sp.dataset.sp;return renderStats()}
+  const sf=t.closest('[data-sf]');
+  if(sf){stF=sf.dataset.sf;return renderStats()}
   const tg=t.closest('[data-tag]');
   if(tg){q='#'+tg.dataset.tag;setView('home');const i=$('#fm-q');if(i)i.value=q;return paint()}
+  const fol=t.closest('[data-fol]');
+  if(fol){
+    const id=fol.dataset.fol;if(!id)return;
+    followSet.add(id);paintAuthor(id);
+    const S=await ready();let ok=false;
+    if(S){const r=await S.from('follows').insert({followee:id});ok=!r.error||r.error.code==='23505'}
+    if(!ok){followSet.delete(id);paintAuthor(id)}
+    return;
+  }
+  const pf=t.closest('[data-prof]');
+  if(pf){
+    const id=pf.dataset.prof;
+    if(window.MS&&window.PF){MS.show('prof');setTimeout(()=>window.PF.open(id),80)}
+    return;
+  }
   if(t.tagName==='VIDEO'){
     if(t.muted){t.muted=false;t.play()}else if(t.paused)t.play();else t.pause();
     return;
