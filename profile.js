@@ -1007,7 +1007,6 @@ async function act(e){
   else if((x=b('[data-del]'))){
     const id=+x.dataset.del;
     /* без всплывающего confirm: первое нажатие готовит удаление, второе удаляет */
-    if(delArm!==id){delArm=id;note('Нажми «Удалить» ещё раз, чтобы удалить публикацию');setTimeout(()=>{if(delArm===id)delArm=null},4000);return}
     delArm=null;
     const pp=S.posts.find(z=>z.id===id),r=await SB.from('posts').delete().eq('id',id).select();
     S.cd=null;
