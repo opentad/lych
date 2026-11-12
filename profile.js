@@ -1011,7 +1011,7 @@ async function act(e){
     delArm=null;
     const pp=S.posts.find(z=>z.id===id),r=await SB.from('posts').delete().eq('id',id).select();
     S.cd=null;
-    if(r.error||!r.data.length){draw();note('Не удалось удалить');return}
+    if(r.error||!r.data.length){draw();note('Не удалось удалить: '+(r.error?r.error.message:'нет прав (RLS)'));return}
     const fps=pp?postImgs(pp).map(u=>decodeURIComponent((u.split('/posts/')[1]||'').split('?')[0])).filter(Boolean):[];
     if(fps.length)SB.storage.from('posts').remove(fps);
     S.posts=S.posts.filter(z=>z.id!==id&&z.repost_of!==id);S.np=S.posts.length>=S.np?S.np:S.np;S.np--;draw();
