@@ -71,6 +71,12 @@ h1{font-weight:300;font-size:26.5px;line-height:1.05;color:var(--tx);margin-top:
 .fab:disabled{background:#1c2545;color:var(--mu);box-shadow:none}
 .mod{position:fixed;inset:0;background:rgba(4,6,14,.65);display:grid;place-items:center;z-index:20;padding:20px}
 .mbox{background:var(--s2);border-radius:25px;padding:28px 30px;max-width:420px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.rules-box{position:relative;width:min(560px,100%);max-height:min(80vh,720px);overflow:auto;background:var(--s2);border:1px solid rgba(185,166,232,.2);border-radius:24px;padding:24px;text-align:left;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.rules-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}
+.rules-head h2{font-size:20px;font-weight:700;color:var(--tx)}
+.rules-close{width:36px;height:36px;flex:none;border-radius:50%;background:rgba(255,255,255,.07);font-size:23px;color:var(--mu)}
+.rules-content{font-size:13px;line-height:1.8;color:#c5cce2;white-space:pre-wrap;overflow-wrap:anywhere}
+.rules-content b{color:var(--tx)}
 .mbox h3{font-size:19px;font-weight:700;margin-bottom:10px}
 .mbox p{font-size:13px;color:#b8c0dc;line-height:1.5;margin-bottom:22px}
 .fr{font-size:11.5px;color:var(--mu);padding:10px 4px}
@@ -120,12 +126,52 @@ const ICON={
  fresh:'M5.5 5h3v14h-3zM12.5 5l7 7-7 7z',
  game:'M7.5 8h9a4.5 4.5 0 0 1 4.4 3.6l.9 4.5a2.2 2.2 0 0 1-3.8 1.9L16 15.7H8l-2 2.3a2.2 2.2 0 0 1-3.8-1.9l.9-4.5A4.5 4.5 0 0 1 7.5 8zM7.5 10.8v2.6M6.2 12h2.6M15.3 11.2h.01M17.2 13h.01',
  more:'M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z',
+ rules:'M6 3.5h9l3 3V20H6zM15 3.5V7h3M9 11h6M9 14.5h6M9 18h4',
  bank:'M5 6.5h14a1.5 1.5 0 0 1 1.5 1.5v6a1.5 1.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 14V8A1.5 1.5 0 0 1 5 6.5zM12 9.3a1.7 1.7 0 1 0 0 3.4 1.7 1.7 0 0 0 0-3.4zM6.5 11h.01M17.5 11h.01M6 18h12M8 20.5h8'
 };
 const ic=k=>`<svg viewBox="0 0 24 24"><path d="${ICON[k]}"/></svg>`;
 
+/* ---------- модальное окно правил сообщества ---------- */
+let rulesOverlay=null;
+let rulesPreviousTab=null;
+function closeRules(){
+  if(!rulesOverlay)return;
+  rulesOverlay.remove();
+  rulesOverlay=null;
+  document.removeEventListener('keydown',rulesKeydown);
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
+  if(rulesPreviousTab)rulesPreviousTab.classList.add('on');
+  rulesPreviousTab=null;
+}
+function rulesKeydown(e){if(e.key==='Escape')closeRules()}
+function openRules(){
+  if(rulesOverlay)return;
+  rulesPreviousTab=document.querySelector('.tab.on');
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.dataset.v==='rules'));
+  const overlay=document.createElement('div');
+  overlay.className='mod';
+  overlay.id='rules-modal';
+  overlay.innerHTML=`
+    <section class="rules-box" role="dialog" aria-modal="true" aria-labelledby="rules-title">
+      <div class="rules-head">
+        <h2 id="rules-title">📜 Правила Lych</h2>
+        <button class="rules-close" type="button" aria-label="Закрыть">×</button>
+      </div>
+      <div class="rules-content"><b>НАПИШИ ТУТ СВОИ ПРАВИЛА</b></div>
+    </section>
+  `;
+  document.body.appendChild(overlay);
+  rulesOverlay=overlay;
+  overlay.addEventListener('click',e=>{
+    if(e.target===overlay||e.target.closest('.rules-close'))closeRules();
+  });
+  document.addEventListener('keydown',rulesKeydown);
+  overlay.querySelector('.rules-close').focus();
+}
+
+
 /* ---------- вкладки панели: [экран, значок, название]. Лишнее — удали строку ---------- */
-const TABS=[['feed','feed','Лента'],['msg','chat','Чат'],['fm','fresh','Fresh'],['lib','lib','Библиотека'],['bank','bank','Банк'],['more','more','Ещё']];
+const TABS=[['feed','feed','Лента'],['msg','chat','Чат'],['fm','fresh','Fresh'],['lib','lib','Библиотека'],['bank','bank','Банк'],['more','more','Ещё'],['rules','rules','Правила']];
 /* плитки страницы «Ещё»: [экран, значок, название] */
 const TILES=[['office','office','MilkOffice'],['games','game','Игры'],['market','crown','Маркетплейс']];
 
@@ -146,6 +192,7 @@ function setUrl(v){
   try{history.pushState(null,'',h)}catch(e){}
 }
 function show(v,pop){
+  if(v==='rules'){openRules();return;}
   if(v==='home')v='feed';
   if(!pop)setUrl(v);
   try{localStorage.setItem('mpage',v)}catch(e){}
