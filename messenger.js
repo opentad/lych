@@ -264,7 +264,20 @@ const voiceStyle=document.createElement('style');voiceStyle.textContent=`
 .mg-mic{flex:none;width:44px;height:44px;border-radius:14px;display:grid;place-items:center;color:var(--bt);background:#eef8fc}
 .mg-mic svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .mg-mic:disabled{opacity:.35;pointer-events:none}
-.mg-vplayer{display:block;width:min(300px,100%);height:38px;margin-top:7px}
+.mg-vplayer{display:flex;align-items:center;gap:9px;width:min(330px,100%);margin-top:9px;padding:8px 10px;border-radius:13px;background:rgba(110,155,180,.12);box-sizing:border-box;color:inherit}
+.mg-vplayer audio{display:none}
+.mg-vplay{width:34px;height:34px;flex:0 0 34px;border:0;border-radius:50%;display:grid;place-items:center;background:var(--cy);color:#fff;font-size:14px;cursor:pointer}
+.mg-vtrack{position:relative;min-width:0;flex:1;height:30px;display:flex;align-items:center;cursor:pointer;overflow:hidden}
+.mg-vwave{height:25px;width:100%;display:flex;align-items:center;justify-content:space-between;gap:2px;pointer-events:none}
+.mg-vwave i{display:block;flex:1;min-width:2px;border-radius:4px;background:currentColor;opacity:.34;transform-origin:center}
+.mg-vprogress{position:absolute;left:0;top:0;bottom:0;width:0;overflow:hidden;pointer-events:none;color:var(--cy)}
+.mg-vprogress .mg-vwave i{opacity:1}
+.mg-vtime{font-size:11px;white-space:nowrap;opacity:.75;font-variant-numeric:tabular-nums;min-width:34px;text-align:center}
+.mg-vrate{border:0;background:transparent;color:inherit;font-size:11px;font-weight:700;padding:5px 3px;cursor:pointer;white-space:nowrap}
+.mg.fs .mg-vplayer{background:#292929}
+.mg.fs .mg-vplay{background:#8774e1}
+.mg.fs .mg-vwave i{opacity:.42}
+.mg.fs .mg-vprogress .mg-vwave i{opacity:1}
 @keyframes mgpulse{50%{opacity:.25}}
 .mg.fs .mg-vrec,.mg.fs .mg-vpreview{background:#292929;border-color:#393939;color:#eee}
 .mg.fs .mg-mic{background:#2c2c2c;color:#b5a9ff}
@@ -326,6 +339,15 @@ function rAdd(){return rInv();
   a.innerHTML='<div class="mg-ap"><small>Добавить в чат. Новый участник увидит всю переписку с самого начала.'+(c.m.length===2?' Личный чат станет групповым.':'')+'</small><div class="mg-ch">'+
     (c.m.length>=MAXM?'Достигнут лимит участников':(av.map(n=>'<button data-add="'+esc(n)+'">+ '+esc(n)+'</button>').join('')||'Все уже в чате'))+'</div></div>';
 }
+function voiceBars(path){
+  let seed=0;for(let i=0;i<path.length;i++)seed=(seed*31+path.charCodeAt(i))>>>0;
+  let out='';for(let i=0;i< thirtyTwo();i++){seed=(seed*1664525+1013904223)>>>0;const h=5+(seed%19);out+='<i style="height:'+h+'px"></i>'}return out;
+}
+function thirtyTwo(){return 32}
+function voicePlayerHTML(path){
+  const bars=voiceBars(path);
+  return '<div class="mg-vplayer" data-vp="'+esc(path||'')+'"><audio preload="none"></audio><button class="mg-vplay" type="button" data-vplay aria-label="Воспроизвести">▶</button><div class="mg-vtrack" data-vseek role="slider" aria-label="Позиция голосового сообщения" tabindex="0"><div class="mg-vwave">'+bars+'</div><div class="mg-vprogress"><div class="mg-vwave">'+bars+'</div></div></div><span class="mg-vtime" data-vtime>0:00</span><button class="mg-vrate" type="button" data-vrate>1×</button></div>';
+}
 function rMsgs(keep){
   const c=cur(),b=$('#mgm'),s0=b.scrollTop;
   if(!c){b.innerHTML='<div class="mg-em">Выбери чат слева<br>или создай новый диалог</div>';return}
@@ -343,7 +365,7 @@ function rMsgs(keep){
       '<div class="mg-b'+(hit[mi]===i?' cur':'')+'"'+(m.id?' data-mid="'+m.id+'"':'')+'>'+
       (!me?'<em style="color:'+col(m.w)+'">'+esc(m.w)+'</em>'+(FI[m.uid]?'<span class="fio">'+esc(FI[m.uid])+'</span>':''):'')+
       (m.rt?quote(m.rt):'')+(m.poll?pollHTML(m):(m.x?'<p>'+hl(m.x,hq)+'</p>':''))+
-      (m.f?(m.f.voice?'<audio class="mg-vplayer" controls preload="none" data-vp="'+esc(m.f.p||'')+'" aria-label="Голосовое сообщение"></audio>':'<div class="mg-f"'+(m.f.p?' data-fp="'+esc(m.f.p)+'" style="cursor:pointer"':'')+'>'+ic('clip')+'<span>'+esc(m.f.n)+'</span><small>'+m.f.s+'</small></div>'):'')+
+      (m.f?(m.f.voice?voicePlayerHTML(m.f.p||''):'<div class="mg-f"'+(m.f.p?' data-fp="'+esc(m.f.p)+'" style="cursor:pointer"':'')+'>'+ic('clip')+'<span>'+esc(m.f.n)+'</span><small>'+m.f.s+'</small></div>'):'')+
       '<small>'+(m.pin?'📌 ':'')+dm(m.t)+' в '+hm(m.t)+'</small></div>'+
       (me?avU(m.uid,m.w,1):'')+'</div>';
   });
@@ -439,10 +461,15 @@ function createOld(){
   open(c.id);
 }
 
+function rootPlayPause(a){if(a.paused){const p=a.play();if(p&&p.catch)p.catch(()=>toast('Не удалось воспроизвести аудио'))}else a.pause()}
+
 sec.addEventListener('click',e=>{
   const t=e.target,b=k=>t.closest(k);let x;
  enablePush();
  if(menuOpen&&!b('#mgdots')&&!b('#mgpoll')){menuOpen=0;rHead()}
+  if((x=b('[data-vplay]'))){const box=x.closest('.mg-vplayer'),a=box&&box.querySelector('audio');if(a){rootPlayPause(a)}return}
+  if((x=b('[data-vrate]'))){const box=x.closest('.mg-vplayer'),a=box&&box.querySelector('audio');if(a){const rates=[1,1.5,2],next=rates[(rates.indexOf(a.playbackRate)+1)%rates.length];a.playbackRate=next;x.textContent=next+'×'}return}
+  if((x=b('[data-vseek]'))){const box=x.closest('.mg-vplayer'),a=box&&box.querySelector('audio');if(a&&Number.isFinite(a.duration)){const r=x.getBoundingClientRect(),ratio=Math.max(0,Math.min(1,(e.clientX-r.left)/r.width));a.currentTime=ratio*a.duration}return}
  if(ma&&!b('.mg-pop')&&!b('.mg-b[data-mid]')){ma='';rMsgs(1)}
   if(b('#mg-home'))MS.show('home');
   else if(b('#mgfs'))setFs(!fs);
@@ -1170,9 +1197,9 @@ async function yClear(){
 }
 function voiceClock(){const n=Math.max(0,Math.floor((Date.now()-voiceStartedAt)/1000));return String(Math.floor(n/60)).padStart(2,'0')+':'+String(n%60).padStart(2,'0')}
 function loadVoicePlayers(root){
-  root.querySelectorAll('audio[data-vp]').forEach(async a=>{
-    const path=a.dataset.vp;if(!path||a.dataset.loading||a.src)return;
-    a.dataset.loading='1';
+  root.querySelectorAll('.mg-vplayer[data-vp]').forEach(async box=>{
+    const path=box.dataset.vp,a=box.querySelector('audio');if(!path||!a||box.dataset.loading||a.src)return;
+    box.dataset.loading='1';
     try{
       let cached=voiceURLCache.get(path);
       if(!cached||cached.expires<Date.now()){
@@ -1180,10 +1207,15 @@ function loadVoicePlayers(root){
         if(r.error)throw r.error;
         cached={url:r.data.signedUrl,expires:Date.now()+3500000};voiceURLCache.set(path,cached);
       }
-      if(a.isConnected){a.src=cached.url;a.load()}
-    }catch(e){if(a.isConnected){a.removeAttribute('data-loading');a.title='Не удалось загрузить голосовое'}}
+      if(box.isConnected){a.src=cached.url;a.load();box.dataset.ready='1';}
+    }catch(e){if(box.isConnected){delete box.dataset.loading;box.title='Не удалось загрузить голосовое'} }
+    const fmt=n=>{if(!Number.isFinite(n))return '0:00';n=Math.max(0,Math.floor(n));return Math.floor(n/60)+':'+String(n%60).padStart(2,'0')};
+    const update=()=>{if(!box.isConnected)return;const d=a.duration||0,p=d?Math.min(100,a.currentTime/d*100):0;const pr=box.querySelector('.mg-vprogress');if(pr)pr.style.width=p+'%';const tm=box.querySelector('[data-vtime]');if(tm)tm.textContent=a.currentTime>0?fmt(a.currentTime):fmt(d);const bt=box.querySelector('[data-vplay]');if(bt){bt.textContent=a.paused?'▶':'Ⅱ';bt.setAttribute('aria-label',a.paused?'Воспроизвести':'Пауза')}};
+    if(!a.dataset.bound){a.dataset.bound='1';['loadedmetadata','timeupdate','durationchange','play','pause','ended'].forEach(ev=>a.addEventListener(ev,update));a.addEventListener('ended',()=>{a.currentTime=0;update()})}
+    update();
   });
 }
+
 async function startVoice(){
   const c=cur();if(!c||c.sys||c.bot||voiceState!=='idle')return;
   voiceChatId=c.id;
