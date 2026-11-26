@@ -115,10 +115,77 @@ body.menu .fd-nv{display:none}
 .fd-lb .pv{left:12px;top:50%;transform:translateY(-50%)}
 .fd-lb .nx{right:12px;top:50%;transform:translateY(-50%)}
 .fd-lb .ct{position:absolute;top:24px;left:50%;transform:translateX(-50%);color:#fff;font:700 13px system-ui,sans-serif;background:rgba(0,0,0,.4);padding:4px 12px;border-radius:12px}
-@media(max-width:640px){.fd-h{font-size:24px}.fd-bd p{font-size:15.5px}.fd-p{padding:14px}.fd-gl img{height:140px}.fd-gl.od img:first-child{height:200px}}`;
-document.head.appendChild(css);
+@media(max-width:640px){.fd-h{font-size:24px}.fd-bd p{font-size:15.5px}.fd-p{padding:14px}.fd-gl img{height:140px}.fd-gl.od img:first-child{height:200px}}
+  .fd-rules-btn {
+  display:flex;
+  align-items:center;
+  gap:12px;
+  width:100%;
+  margin:0 0 14px;
+  padding:13px 15px;
+  text-align:left;
+  border:1px solid var(--bd);
+  border-radius:16px;
+  background:var(--sf);
+  color:var(--tx);
+  cursor:pointer;
+}
+.fd-rules-btn .ico {
+  width:40px;height:40px;
+  display:grid;place-items:center;
+  border-radius:12px;
+  background:var(--acbg);
+  font-size:21px;
+}
+.fd-rules-btn b {display:block;font-size:14px}
+.fd-rules-btn small {
+  display:block;margin-top:3px;
+  color:var(--mu);font-size:12px;
+}
+.fd-rules-btn .arr {
+  margin-left:auto;color:var(--mu);font-size:22px;
+}
+.fd-rules-overlay {
+  position:fixed;inset:0;z-index:12000;
+  display:grid;place-items:center;padding:18px;
+  background:rgba(0,0,0,.72);
+  backdrop-filter:blur(6px);
+}
+.fd-rules-dialog {
+  width:min(560px,100%);max-height:82vh;
+  overflow:auto;padding:22px;
+  border:1px solid var(--bd);
+  border-radius:20px;
+  background:var(--bg,#171923);
+  color:var(--tx);
+}
+.fd-rules-head {
+  display:flex;align-items:center;
+  justify-content:space-between;
+  margin-bottom:16px;
+}
+.fd-rules-close {
+  width:36px;height:36px;
+  border-radius:10px;background:var(--sf);
+  color:var(--tx);font-size:22px;
+}
+.fd-rules-text {
+  padding:16px;border:1px solid var(--bd);
+  border-radius:14px;white-space:pre-wrap;
+  overflow-wrap:anywhere;line-height:1.65;
+  font-size:14px;
+}
+document.head.appendChild(css)`;
 
 sec.innerHTML=`<div class="fd-wrap"><h1 class="fd-h">Лента</h1>
+<button class="fd-rules-btn" type="button" data-rules>
+  <span class="ico">📜</span>
+  <span>
+    <b>Правила Lych</b>
+    <small>Ознакомься с правилами нашего сообщества</small>
+  </span>
+  <span class="arr">›</span>
+</button>
 <label class="fd-s">${ic('search')}<input id="fd-q" placeholder="Найти публикацию или автора" autocomplete="off"></label>
 <div id="fd-so"></div>
 <div class="fd-pw"><small class="fd-k">Кого читать</small><div id="fd-p"></div></div>
@@ -245,10 +312,66 @@ async function load2(){
   chips();posts();people();
 }
 const pid=el=>+el.closest('.fd-p').dataset.id;
+  function openRules(){
+  if(document.querySelector('.fd-rules-overlay'))return;
+
+  const overlay=document.createElement('div');
+  overlay.className='fd-rules-overlay';
+
+  overlay.innerHTML=`
+    <section class="fd-rules-dialog"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="fd-rules-title">
+
+      <div class="fd-rules-head">
+        <h2 id="fd-rules-title">📜 Правила Lych</h2>
+        <button class="fd-rules-close"
+          type="button" aria-label="Закрыть">×</button>
+      </div>
+
+      <div class="fd-rules-text">
+      
+      <b>Правило №1. </b> НИКАКИХ ТЕМ ПРО: н@ркоманов, н@силия, алк@шей, мужиков и в т. д.
+
+      <b>Правило №2. </b> НЕЛЬЗЯ выставлять свои грехи напоказ типа: "я слушаю музыку" и т. д.
+
+      <b>Правило №3. </b> НЕЛЬЗЯ выставлять фотографии с ауратом.
+
+      <b>Правило №4. </b> НИКОГО не оскорблять, не материться.
+
+      <i> Пока что всё, но в скором времени список пополнится... </i>
+      
+      </div>
+    </section>
+  `;
+
+  document.body.appendChild(overlay);
+
+  const close=()=>{
+    overlay.remove();
+    document.removeEventListener('keydown',onKey);
+  };
+
+  const onKey=e=>{
+    if(e.key==='Escape')close();
+  };
+
+  overlay.addEventListener('click',e=>{
+    if(e.target===overlay ||
+       e.target.closest('.fd-rules-close')){
+      close();
+    }
+  });
+
+  document.addEventListener('keydown',onKey);
+  overlay.querySelector('.fd-rules-close').focus();
+}
 sec.addEventListener('input',e=>{if(e.target.id==='fd-rt')st.rpt=e.target.value});
 sec.addEventListener('click',async e=>{
   const t=e.target,b=k=>t.closest(k),SB=db();let x;
-  if(b('[data-go]'))MS.show('msg');
+  if(b('[data-rules]'))openRules();
+  else if(b('[data-go]'))MS.show('msg');
   else if((x=b('[data-gal]'))){const p=st.posts.find(z=>z.id==x.dataset.gal)||st.orig[x.dataset.gal];if(p)openGal(imgs(p),+x.dataset.gi)}
   else if(b('[data-rpx]')){st.rp=null;st.rpt='';posts()}
   else if(b('[data-rpgo]')){
