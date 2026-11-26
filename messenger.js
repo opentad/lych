@@ -676,7 +676,7 @@ await loadVotes();
     const m=ms.filter(x=>x.chat_id===c.id).reverse().map(toM).filter(x=>!CL[c.id]||x.t>CL[c.id]);
     if(!m.length){if(CL[c.id])return null;m.push({w:'sys',x:'Чат создан',t:Date.parse(c.created_at)})}
     return{id:c.id,code:c.invite_code,uids:u,title:c.title||'',un:un[c.id]||0,m:u.map(x=>nmap[x]||'Участник'),msgs:m,hasMore:page.hasMore,olderCursor:page.cursor,loadingOlder:false}}).filter(Boolean));
- const yh=await sb.from('yari_messages').select('role,text,created_at').order('created_at',{ascending:false}).limit(100);
+ const yh=await sb.from('yari_messages').select('role,text,created_at').order('created_at',{ascending:false}).limit(50);
  if(yh.error)toast('История Yari не загрузилась: '+yh.error.message);
   const ym=(yh.data||[]).reverse().map(r=>({w:r.role==='user'?ME:'Yari',x:r.text,uid:r.role==='user'?me.id:'yari',t:Date.parse(r.created_at)}));
   C.unshift({id:'yari',bot:1,uids:[],m:[ME,'Yari'],title:'Yari',un:0,msgs:[{w:'sys',x:'Это Yari, ИИ-бот. Спрашивай что угодно',t:(ym[0]?ym[0].t:N)-1},...ym]});
