@@ -382,6 +382,7 @@ function nav(d){
   const h=hits(c);if(!h.length)return;
   mi=(mi+d+h.length)%h.length;rMsgs();
 }
+$('#mgm').addEventListener('scroll',()=>{const c=cur();if(c&&!sOpen&&$('#mgm').scrollTop<100)loadOlder(c)},{passive:true});
  function sendOld(){
   const c=cur();if(!c||c.sys)return;
   const x=dr.trim();if(!x&&!pf)return;
@@ -649,15 +650,21 @@ const au=document.createElement('div');au.id='mgau';au.hidden=true;sec.appendChi
 const tr=m=>/Invalid login/i.test(m)?'Неверная почта или пароль':/already/i.test(m)?'Такая почта уже зарегистрирована':/rate limit/i.test(m)?'Слишком много попыток, подожди минуту':m;
 function toast(t){let d=$('#mgtoast');if(!d){d=document.createElement('div');d.id='mgtoast';d.style.cssText='position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:#34404e;color:#fff;padding:12px 20px;border-radius:16px;z-index:60;font-size:13px;max-width:90vw';document.body.appendChild(d)}d.textContent=t;d.hidden=false;clearTimeout(d._t);d._t=setTimeout(()=>d.hidden=true,3500)}
 const setName=(id,n)=>{n=n||'Участник';let k=n,i=2;while(Object.entries(nmap).some(([u,v])=>v===k&&u!==id))k=n+' '+i++;nmap[id]=k};
-const toM=r=>{const s=(r.body||'').startsWith('§sys§');return{id:r.id,uid:r.user_id,rt:r.reply_to,cid:r.chat_id,pin:!!r.pinned,poll:r.poll||null,w:s?'sys':(nmap[r.user_id]||'Участник'),x:s?r.body.slice(5):(r.body||''),f:r.file_path?{n:r.file_name||'файл',s:'',p:r.file_path}:null,t:Date.parse(r.created_at)}};
+const MESSAGE_PAGE_SIZE=100;
+const toM=r=>{const s=(r.body||'').startsWith('§sys§');return{id:r.id,uid:r.user_id,rt:r.reply_to,cid:r.chat_id,pin:!!r.pinned,poll:r.poll||null,w:s?'sys':(nmap[r.user_id]||'Участник'),x:s?r.body.slice(5):(r.body||''),f:r.file_path?{n:r.file_name||'файл',s:'',p:r.file_path}:null,t:Date.parse(r.created_at),createdAt:r.created_at}};
 async function loadAll(){
   const since=new Date(Date.now()-30*864e5).toISOString();
-  const [a,b,d]=await Promise.all([
+  const [a,b]=await Promise.all([
     sb.from('chats').select('id,title,invite_code,created_at'),
-    sb.from('chat_members').select('chat_id,user_id,cleared_at'),
-    sb.from('messages').select('id,chat_id,user_id,body,file_path,file_name,created_at,pinned,poll,reply_to').gte('created_at',since).order('created_at',{ascending:false}).limit(1000)]);
-  if(a.error||b.error||d.error){toast('Ошибка загрузки: '+(a.error||b.error||d.error).message);return}
-  const ms=d.data.reverse(),ids=new Set([me.id]);
+    sb.from('chat_members').select('chat_id,user_id,cleared_at')]);
+  if(a.error||b.error){toast('Ошибка загрузки: '+(a.error||b.error).message);return}
+  const pages=await Promise.all(a.data.map(async c=>{
+    const r=await sb.from('messages').select('id,chat_id,user_id,body,file_path,file_name,created_at,pinned,poll,reply_to').eq('chat_id',c.id).gte('created_at',since).order('created_at',{ascending:false}).order('id',{ascending:false}).limit(MESSAGE_PAGE_SIZE);
+    return {chatId:c.id,data:r.data||[],error:r.error};
+  }));
+  const failed=pages.find(x=>x.error);if(failed){toast('Ошибка загрузки сообщений: '+failed.error.message);return}
+  const pageByChat=Object.fromEntries(pages.map(x=>[x.chatId,{hasMore:x.data.length===MESSAGE_PAGE_SIZE,cursor:x.data.length?{created_at:x.data[x.data.length-1].created_at,id:x.data[x.data.length-1].id}:null}]));
+  const ms=pages.flatMap(x=>x.data),ids=new Set([me.id]);
   b.data.forEach(x=>ids.add(x.user_id));ms.forEach(x=>ids.add(x.user_id));
   ((await sb.from('profiles').select('id,name,last_seen,fio,avatar_url').in('id',[...ids])).data||[]).forEach(r=>{LS[r.id]=Date.parse(r.last_seen);FI[r.id]=r.fio||'';AV[r.id]=r.avatar_url||'';if(!nmap[r.id])setName(r.id,r.name)});
 await loadVotes();
@@ -665,13 +672,33 @@ await loadVotes();
   const un=Object.fromEntries(C.map(c=>[c.id,c.un||0]));
   const CL={};b.data.forEach(x=>{if(x.user_id===me.id&&x.cleared_at)CL[x.chat_id]=Date.parse(x.cleared_at)});
   C.splice(0,C.length,...a.data.map(c=>{
-    const u=b.data.filter(x=>x.chat_id===c.id).map(x=>x.user_id),m=ms.filter(x=>x.chat_id===c.id).map(toM).filter(x=>!CL[c.id]||x.t>CL[c.id]);
+    const u=b.data.filter(x=>x.chat_id===c.id).map(x=>x.user_id),page=pageByChat[c.id]||{hasMore:false,cursor:null};
+    const m=ms.filter(x=>x.chat_id===c.id).reverse().map(toM).filter(x=>!CL[c.id]||x.t>CL[c.id]);
     if(!m.length){if(CL[c.id])return null;m.push({w:'sys',x:'Чат создан',t:Date.parse(c.created_at)})}
-    return{id:c.id,code:c.invite_code,uids:u,title:c.title||'',un:un[c.id]||0,m:u.map(x=>nmap[x]||'Участник'),msgs:m}}).filter(Boolean));
+    return{id:c.id,code:c.invite_code,uids:u,title:c.title||'',un:un[c.id]||0,m:u.map(x=>nmap[x]||'Участник'),msgs:m,hasMore:page.hasMore,olderCursor:page.cursor,loadingOlder:false}}).filter(Boolean));
  const yh=await sb.from('yari_messages').select('role,text,created_at').order('created_at',{ascending:false}).limit(100);
  if(yh.error)toast('История Yari не загрузилась: '+yh.error.message);
   const ym=(yh.data||[]).reverse().map(r=>({w:r.role==='user'?ME:'Yari',x:r.text,uid:r.role==='user'?me.id:'yari',t:Date.parse(r.created_at)}));
   C.unshift({id:'yari',bot:1,uids:[],m:[ME,'Yari'],title:'Yari',un:0,msgs:[{w:'sys',x:'Это Yari, ИИ-бот. Спрашивай что угодно',t:(ym[0]?ym[0].t:N)-1},...ym]});
+}
+async function loadOlder(c){
+  if(!c||c.bot||!c.hasMore||c.loadingOlder||!c.olderCursor)return;
+  c.loadingOlder=true;
+  const box=$('#mgm'),oldHeight=box.scrollHeight,oldTop=box.scrollTop;
+  const cur=c.olderCursor,since=new Date(Date.now()-30*864e5).toISOString();
+  const filter='created_at.lt.'+cur.created_at+',and(created_at.eq.'+cur.created_at+',id.lt.'+cur.id+')';
+  try{
+    const r=await sb.from('messages').select('id,chat_id,user_id,body,file_path,file_name,created_at,pinned,poll,reply_to').eq('chat_id',c.id).gte('created_at',since).or(filter).order('created_at',{ascending:false}).order('id',{ascending:false}).limit(MESSAGE_PAGE_SIZE);
+    if(r.error){toast('Не удалось загрузить старые сообщения: '+r.error.message);return}
+    if(!r.data||!r.data.length){c.hasMore=false;return}
+    const older=r.data.reverse().map(toM),seen=new Set(c.msgs.map(m=>m.id));
+    const fresh=older.filter(m=>!m.id||!seen.has(m.id));
+    c.msgs=[...fresh,...c.msgs];
+    c.olderCursor={created_at:r.data[0].created_at,id:r.data[0].id};
+    c.hasMore=r.data.length===MESSAGE_PAGE_SIZE;
+    if(sel===c.id){rMsgs(1);box.scrollTop=oldTop+(box.scrollHeight-oldHeight)}
+  }catch(e){toast('Не удалось загрузить старые сообщения: '+(e.message||'ошибка сети'))}
+  finally{c.loadingOlder=false}
 }
 const link=c=>location.origin+location.pathname+'?join='+c.code;
 function copy(t){const ok=()=>toast('Ссылка скопирована. Отправь её тому, кого хочешь пригласить');if(navigator.clipboard)navigator.clipboard.writeText(t).then(ok,()=>prompt('Скопируй ссылку',t));else prompt('Скопируй ссылку',t)}
