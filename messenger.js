@@ -1225,7 +1225,7 @@ async function startVoice(){
     if(sel!==c.id||voiceChatId!==c.id){voiceStream.getTracks().forEach(t=>t.stop());voiceStream=null;voiceChatId=null;return}
     const types=['audio/webm;codecs=opus','audio/webm','audio/mp4'];
     const mime=types.find(t=>MediaRecorder.isTypeSupported&&MediaRecorder.isTypeSupported(t));
-    voiceRecorder=mime?new MediaRecorder(voiceStream,{mimeType:mime}):new MediaRecorder(voiceStream);
+    voiceRecorder=mime?new MediaRecorder(voiceStream,{mimeType:mime,audioBitsPerSecond:32000}):new MediaRecorder(voiceStream,{audioBitsPerSecond:32000});
     voiceChunks=[];voiceDiscard=false;voiceStartedAt=Date.now();voiceState='recording';
     voiceRecorder.ondataavailable=e=>{if(e.data&&e.data.size)voiceChunks.push(e.data)};
     voiceRecorder.onerror=()=>{toast('Ошибка записи голосового');cancelVoice()};
@@ -1238,7 +1238,7 @@ async function startVoice(){
       voicePreviewUrl=URL.createObjectURL(voiceBlob);voiceState='preview';rFoot();
     };
     voiceRecorder.start(250);
-    voiceTimer=setInterval(()=>{const t=$('#mgvtimer');if(t)t.textContent=voiceClock()},250);
+    voiceTimer=setInterval(()=>{const t=$('#mgvtimer');if(t)t.textContent=voiceClock();if(Date.now()-voiceStartedAt>=60000){stopVoice();toast('Максимум 1 минута')}},250);
     rFoot();
   }catch(e){if(voiceStream){voiceStream.getTracks().forEach(t=>t.stop());voiceStream=null}voiceState='idle';voiceChatId=null;toast(e&&e.name==='NotAllowedError'?'Разреши доступ к микрофону в браузере':'Не удалось включить микрофон: '+(e.message||'ошибка'));rFoot()}
 }
