@@ -592,7 +592,7 @@ function draw(){
   sec.querySelectorAll('[data-k]').forEach(i=>S.ev[i.dataset.k]=i.value);
   const {p,mine}=S,tags=(p.tags||[]).filter(Boolean),sn=mine?'В сети':seen(p.last_seen);
   const btns=mine?`<button class="pf-b" data-edit>${ic('pen')}Редактировать профиль</button>`:
-    `<button class="pf-b${S.fw?' g':''}" data-follow>${S.fw?'Вы подписаны':'Подписаться'}</button><button class="pf-b g" data-dm>${ic('cmt')}Написать</button>`;
+    `<button class="pf-b${S.fw?' g':''}" data-follow>${S.fw?'Вы подписаны':'Подписаться'}</button><button class="pf-b g" data-dm>${ic('cmt')}Написать</button><button class="pf-b g" data-gift>${ic('gift')}Подарить</button>`;
   const shown=p.name;
   const nick=p.nick?'@'+esc(p.nick):(mine?'ник не задан — задай в редактировании':'');
   const menu=mine?`<aside><div class="pf-x pf-mn"><button class="pf-mi" data-open-dsg>${ic('paint')}<span>Оформление</span></button><button class="pf-mi on" data-edit>${ic('pen')}<span>Редактировать профиль</span></button>${mi('mark','Сохранённое')}<button class="pf-mi" data-my-gifts>${ic('gift')}<span>Подарки</span></button></div></aside>`:'';
@@ -1042,8 +1042,24 @@ async function openGiftShop(){
  if(giftLayer!==d)return;
  if(bal.error||!bal.data){d.querySelector('.pf-gift-body').innerHTML='<div class="pf-em">Не удалось получить баланс: '+giftEsc(bal.error?.message||'нет данных')+'</div>';return}
  const coins=Number(bal.data.coins)||0;
- d.querySelector('.pf-gift-body').innerHTML=`<div class="pf-gift-balance">Твой баланс: <b>${coins} MilkyCoin</b></div><div class="pf-gift-grid">${PROFILE_GIFTS.map(g=>`<article class="pf-gift-card"><img src="${encodeURI(g.img)}" alt="${giftEsc(g.name)}" loading="lazy"><b>${giftEsc(g.name)}</b><small>${g.price} MilkyCoin</small><button class="pf-b" data-send-gift="${g.type}" ${coins<g.price?'disabled':''}>Подарить</button></article>`).join('')}</div><p class="pf-gift-hint">Подарок появится в коллекции получателя.</p>`;
+ const testGrant=S.me.id==='ace94598-8ba0-4dc9-90dd-e2f5538e11d9'&&!localStorage.getItem('lych_test_50_used_ace94598');
+ d.querySelector('.pf-gift-body').innerHTML=`<div class="pf-gift-balance">Твой баланс: <b>${coins} MilkyCoin</b></div>${testGrant?'<button class="pf-b" data-test-coins style="margin:0 0 14px;width:100%">🧪 +50 тестовых монет</button>':''}<div class="pf-gift-grid">${PROFILE_GIFTS.map(g=>`<article class="pf-gift-card"><img src="${encodeURI(g.img)}" alt="${giftEsc(g.name)}" loading="lazy"><b>${giftEsc(g.name)}</b><small>${g.price} MilkyCoin</small><button class="pf-b" data-send-gift="${g.type}" ${coins<g.price?'disabled':''}>Подарить</button></article>`).join('')}</div><p class="pf-gift-hint">Подарок появится в коллекции получателя.</p>`;
  d.addEventListener('click',async e=>{
+  const testBtn=e.target.closest('[data-test-coins]');
+  if(testBtn){
+   if(S.me.id!=='ace94598-8ba0-4dc9-90dd-e2f5538e11d9'||localStorage.getItem('lych_test_50_used_ace94598'))return;
+   testBtn.disabled=true;testBtn.textContent='Начисляем…';
+   const current=await SB.from('profiles').select('coins').eq('id',S.me.id).maybeSingle();
+   if(current.error||!current.data){testBtn.disabled=false;testBtn.textContent='+50 не удалось';note('Не удалось прочитать баланс: '+(current.error?.message||'нет данных'));return}
+   const updated=await SB.from('profiles').update({coins:(Number(current.data.coins)||0)+50}).eq('id',S.me.id).select('id');
+   if(updated.error||!updated.data?.length){testBtn.disabled=false;testBtn.textContent='🧪 +50 тестовых монет';note('Supabase не разрешил изменить баланс: '+(updated.error?.message||'нет прав RLS'));return}
+   localStorage.setItem('lych_test_50_used_ace94598','1');
+   const newBalance=(Number(current.data.coins)||0)+50;
+   d.querySelector('.pf-gift-balance b').textContent=newBalance+' MilkyCoin';
+   d.querySelectorAll('[data-send-gift]').forEach(x=>{const g=PROFILE_GIFTS.find(z=>z.type===x.dataset.sendGift);if(g&&newBalance>=g.price)x.disabled=false});
+   testBtn.remove();document.querySelectorAll('.cn').forEach(x=>x.textContent=newBalance);
+   note('Готово! Начислено 50 тестовых MilkyCoin 🧪');return;
+  }
   const b=e.target.closest('[data-send-gift]');if(!b)return;
   const g=PROFILE_GIFTS.find(x=>x.type===b.dataset.sendGift);if(!g)return;
   if(!confirm(`Отправить «${g.name}» за ${g.price} MilkyCoin пользователю ${receiverName}?`))return;
