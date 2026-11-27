@@ -44,13 +44,6 @@
     });
   }
 
-  const GIFTS = [
-  { type: 'ordinary', name: 'Обычная сирень', price: 15, img: 'Обычная сирень.gif' },
-  { type: 'neon', name: 'Неоновая сирень', price: 20, img: 'Неоновая сирень.gif' },
-  { type: 'fire', name: 'Огненная сирень', price: 25, img: 'Огненная сирень.gif' },
-  { type: 'rainbow', name: 'Радужная сирень', price: 30, img: 'Радужная сирень.gif' }
-];
-
   const KINDS = { status: 'Статусы', banner: 'Баннеры' };
 
   const esc = t => String(t == null ? '' : t).replace(/[&<>"]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[m]));
@@ -449,38 +442,6 @@ buy: async function (id) {
   if (!confirm('Купить этот товар?')) return;
   if (await this.pay([id])) { alert('Куплено!'); this.refresh(); }
 },
-buyGift: async function (giftType) {
-      if (!this._me) return alert('Сначала войди в аккаунт');
-      const gift = GIFTS.find(g => g.type === giftType);
-      if (!gift) return alert('Подарок не найден');
-
-      // У кого покупаем/кому дарим (здесь можно сделать выбор пользователя, например, через prompt или модалку)
-      const recipientName = prompt('Кому подарить? Введи ID пользователя:');
-      if (!recipientName) return;
-
-      if (this._coins < gift.price) return alert('Не хватает монет: нужно ' + gift.price + ', у вас ' + this._coins);
-      if (!confirm('Подарить «' + gift.name + '» за ' + gift.price + ' монет?')) return;
-
-      const sb = getSupabase();
-      
-      // Записываем подарок в таблицу user_gifts
-      const ins = await sb.from('user_gifts').insert({
-        sender_id: this._me.id,
-        receiver_id: recipientName,
-        gift_type: giftType
-      });
-      if (ins.error) return alert('Ошибка: ' + ins.error.message);
-
-      // Списываем монеты у покупателя
-      const newCoins = this._coins - gift.price;
-      const upd = await sb.from('profiles').update({ coins: newCoins }).eq('id', this._me.id);
-      if (upd.error) {
-        alert('Подарок отправлен, но ошибка списания: ' + upd.error.message);
-      } else {
-        this.setCoins(newCoins);
-        alert('Подарок успешно отправлен! 🌸');
-      }
-    },
   becomeCreator: async function () {
   if (!this._me) return alert('Сначала войди в аккаунт');
     await this.loadCoins();
