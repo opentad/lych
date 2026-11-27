@@ -595,7 +595,7 @@ function draw(){
     `<button class="pf-b${S.fw?' g':''}" data-follow>${S.fw?'Вы подписаны':'Подписаться'}</button><button class="pf-b g" data-dm>${ic('cmt')}Написать</button>`;
   const shown=p.name;
   const nick=p.nick?'@'+esc(p.nick):(mine?'ник не задан — задай в редактировании':'');
-  const menu=mine?`<aside><div class="pf-x pf-mn"><button class="pf-mi" data-open-dsg>${ic('paint')}<span>Оформление</span></button><button class="pf-mi on" data-edit>${ic('pen')}<span>Редактировать профиль</span></button>${mi('mark','Сохранённое')}${mi('gift','Подарки')}</div></aside>`:'';
+  const menu=mine?`<aside><div class="pf-x pf-mn"><button class="pf-mi" data-open-dsg>${ic('paint')}<span>Оформление</span></button><button class="pf-mi on" data-edit>${ic('pen')}<span>Редактировать профиль</span></button>${mi('mark','Сохранённое')}<button class="pf-mi" data-my-gifts>${ic('gift')}<span>Подарки</span></button></div></aside>`:'';
   
   put(`<div class="pf-cv${p.cover_url?' img':''}"${p.cover_url?` style="background-image:url('${esc(p.cover_url)}')"`:''}></div>
   <div class="pf-hd">${mine?'':CMT.dots(`<button data-pacc>${icm('flag')}Пожаловаться на аккаунт</button>`+(CMT.mod()&&window.MOD?'<button data-pmore data-danger>Модерация</button>':''))}<div class="pf-ava"><span class="pf-big${mine?' pf-me':''}${p.ava_square?' sq':''}"${mine?' data-ava role="button" aria-label="Сменить фото"':''} style="background-color:${col(p.name)};${p.avatar_url?`background-image:url('${esc(p.avatar_url)}')`:''}">${p.avatar_url?'':esc(ini(shown))}</span>${p.plate_url?`<img class="pf-pl" src="${esc(p.plate_url)}" alt="">`:''}</div>
@@ -907,7 +907,8 @@ async function act(e){
     if(r.error){note('Не получилось: '+r.error.message);return}
     S.p.pfst=v;draw();
   }
-  else if(b('[data-gift]'))note('Подарки скоро появятся');
+  else if(b('[data-gift]'))openGiftShop();
+  else if(b('[data-my-gifts]'))openMyGifts();
   else if((x=b('[data-equip-item]'))){
     const kind=x.dataset.kind,url=x.dataset.url;
     const r=await upd(kind==='banner'?{cover_url:url}:{plate_url:url});
@@ -1016,6 +1017,76 @@ async function act(e){
     S.posts=S.posts.filter(z=>z.id!==id&&z.repost_of!==id);S.np=S.posts.length>=S.np?S.np:S.np;S.np--;draw();
   }
 }
+
+/* ---------- подарки профиля: используем существующую таблицу user_gifts ---------- */
+const PROFILE_GIFTS=[
+ {type:'ordinary',name:'Обычная сирень',price:15,img:'Обычная сирень.gif'},
+ {type:'neon',name:'Неоновая сирень',price:20,img:'Неоновая сирень.gif'},
+ {type:'fire',name:'Огненная сирень',price:25,img:'Огненная сирень.gif'},
+ {type:'rainbow',name:'Радужная сирень',price:30,img:'Радужная сирень.gif'}
+];
+let giftLayer=null;
+const giftEsc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function closeGiftLayer(){if(giftLayer){giftLayer.remove();giftLayer=null}}
+function giftFrame(title,body){
+ closeGiftLayer();const d=document.createElement('div');d.className='pf-modal-bg pf-gift-bg';
+ d.innerHTML=`<section class="pf-modal pf-gift-modal" role="dialog" aria-modal="true"><div class="pf-modal-head"><h3>${title}</h3><button class="pf-modal-close" data-gclose aria-label="Закрыть">×</button></div><div class="pf-gift-body">${body}</div></section>`;
+ d.addEventListener('click',e=>{if(e.target===d||e.target.closest('[data-gclose]'))closeGiftLayer()});
+ document.body.appendChild(d);giftLayer=d;return d;
+}
+async function openGiftShop(){
+ if(!S||S.mine||!S.me){note('Открой профиль другого пользователя, чтобы отправить подарок');return}
+ const SB=db(),receiverId=S.id,receiverName=S.p.name||'пользователю';
+ const d=giftFrame('Подарки для '+giftEsc(receiverName),'<div class="pf-em">Загружаем баланс…</div>');
+ const bal=await SB.from('profiles').select('coins').eq('id',S.me.id).maybeSingle();
+ if(giftLayer!==d)return;
+ if(bal.error||!bal.data){d.querySelector('.pf-gift-body').innerHTML='<div class="pf-em">Не удалось получить баланс: '+giftEsc(bal.error?.message||'нет данных')+'</div>';return}
+ const coins=Number(bal.data.coins)||0;
+ d.querySelector('.pf-gift-body').innerHTML=`<div class="pf-gift-balance">Твой баланс: <b>${coins} MilkyCoin</b></div><div class="pf-gift-grid">${PROFILE_GIFTS.map(g=>`<article class="pf-gift-card"><img src="${encodeURI(g.img)}" alt="${giftEsc(g.name)}" loading="lazy"><b>${giftEsc(g.name)}</b><small>${g.price} MilkyCoin</small><button class="pf-b" data-send-gift="${g.type}" ${coins<g.price?'disabled':''}>Подарить</button></article>`).join('')}</div><p class="pf-gift-hint">Подарок появится в коллекции получателя.</p>`;
+ d.addEventListener('click',async e=>{
+  const b=e.target.closest('[data-send-gift]');if(!b)return;
+  const g=PROFILE_GIFTS.find(x=>x.type===b.dataset.sendGift);if(!g)return;
+  if(!confirm(`Отправить «${g.name}» за ${g.price} MilkyCoin пользователю ${receiverName}?`))return;
+  b.disabled=true;b.textContent='Отправляем…';
+  const fresh=await SB.from('profiles').select('coins').eq('id',S.me.id).maybeSingle();
+  if(fresh.error||!fresh.data||Number(fresh.data.coins)<g.price){b.disabled=false;b.textContent='Подарить';note('Не хватает монет или не удалось проверить баланс');return}
+  const before=Number(fresh.data.coins),after=before-g.price;
+  const debit=await SB.from('profiles').update({coins:after}).eq('id',S.me.id).gte('coins',g.price).select('id');
+  if(debit.error||!debit.data?.length){b.disabled=false;b.textContent='Подарить';note('Не удалось списать монеты: '+(debit.error?.message||'баланс уже изменился или нет прав'));return}
+  const ins=await SB.from('user_gifts').insert({sender_id:S.me.id,receiver_id:receiverId,gift_type:g.type});
+  if(ins.error){
+   const refund=await SB.from('profiles').update({coins:before}).eq('id',S.me.id);
+   b.disabled=false;b.textContent='Подарить';
+   note('Сервер не принял подарок: '+ins.error.message+(refund.error?' · Не удалось вернуть монеты автоматически!':' · Монеты возвращены'));
+   return;
+  }
+  document.querySelectorAll('.cn').forEach(x=>x.textContent=after);
+  note('Подарок отправлен! 🌸');closeGiftLayer();
+ });
+}
+async function openMyGifts(){
+ if(!S||!S.mine||!S.me)return;
+ const SB=db(),d=giftFrame('Мои подарки','<div class="pf-em">Загружаем коллекцию…</div>');
+ const r=await SB.from('user_gifts').select('sender_id,receiver_id,gift_type,created_at').or('receiver_id.eq.'+S.me.id+',sender_id.eq.'+S.me.id).order('created_at',{ascending:false}).limit(100);
+ if(giftLayer!==d)return;
+ if(r.error){d.querySelector('.pf-gift-body').innerHTML='<div class="pf-em">Не удалось загрузить подарки: '+giftEsc(r.error.message)+'</div><p class="pf-gift-hint">Возможно, у текущего аккаунта нет доступа к таблице подарков.</p>';return}
+ const rows=r.data||[];
+ if(!rows.length){d.querySelector('.pf-gift-body').innerHTML='<div class="pf-em">Пока подарков нет 🌸</div>';return}
+ const ids=[...new Set(rows.flatMap(x=>[x.sender_id,x.receiver_id]))];
+ const users=await SB.from('profiles').select('id,name').in('id',ids);
+ const names=Object.fromEntries((users.data||[]).map(x=>[x.id,x.name||'Пользователь']));
+ d.querySelector('.pf-gift-body').innerHTML='<div class="pf-gift-grid">'+rows.map(x=>{const g=PROFILE_GIFTS.find(z=>z.type===x.gift_type)||PROFILE_GIFTS[0],sent=x.sender_id===S.me.id,other=names[sent?x.receiver_id:x.sender_id]||'Пользователь';return `<article class="pf-gift-card"><img src="${encodeURI(g.img)}" alt="${giftEsc(g.name)}" loading="lazy"><b>${giftEsc(g.name)}</b><small>${sent?'Ты подарил(а)':'От'}: ${giftEsc(other)}</small><small>${x.created_at?new Date(x.created_at).toLocaleDateString('ru-RU'):''}</small></article>`}).join('')+'</div>';
+}
+const giftCss=document.createElement('style');giftCss.textContent=`
+.pf-gift-modal{max-width:760px}.pf-gift-balance{padding:12px 15px;border-radius:14px;background:var(--c2);margin-bottom:16px;color:var(--ptx)}
+.pf-gift-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:13px}
+.pf-gift-card{min-width:0;padding:12px;border:1px solid var(--pln);border-radius:17px;background:var(--c2);display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;color:var(--ptx)}
+.pf-gift-card img{width:100%;height:125px;object-fit:contain;border-radius:12px;background:rgba(0,0,0,.12)}
+.pf-gift-card b{font-size:13px}.pf-gift-card small{font-size:12px;color:var(--pmu)}.pf-gift-card .pf-b{width:100%;height:38px;padding:0 10px}.pf-gift-card .pf-b:disabled{opacity:.45;cursor:not-allowed}
+.pf-gift-hint{font-size:12px;color:var(--pmu);margin:14px 0 0}
+@media(max-width:520px){.pf-gift-modal{padding:16px}.pf-gift-card img{height:100px}}
+`;document.head.appendChild(giftCss);
+
 sec.addEventListener('click',act);
 
 let want=null;
