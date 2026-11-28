@@ -1284,6 +1284,9 @@ circStyle.textContent=`
 .mg-circv{width:100%;height:100%;object-fit:cover;display:block}
 .mg-circw:not(.pl)::after{content:'▶';position:absolute;inset:0;display:grid;place-items:center;color:#fff;font-size:34px;background:rgba(0,0,0,.25)}`;
 document.head.appendChild(circStyle);
+const circFix=document.createElement('style');
+circFix.textContent='.mg-circw{position:relative !important;width:200px !important;height:200px !important;border-radius:50% !important;overflow:hidden !important;background:#000;margin-top:6px;cursor:pointer;transition:width .25s,height .25s}.mg-circw.pl{width:270px !important;height:270px !important}.mg-circv{width:100% !important;height:100% !important;object-fit:cover;display:block}.mg-ring{position:absolute !important;inset:0;width:100% !important;height:100% !important;transform:rotate(-90deg);pointer-events:none}.mg-ring circle{fill:none;stroke:#8774e1;stroke-width:3;stroke-linecap:round;stroke-dasharray:302;stroke-dashoffset:302}';
+document.head.appendChild(circFix);
 
 function circleHTML(path){return '<div class="mg-circw" data-cp="'+esc(path||'')+'"><video class="mg-circv" playsinline preload="metadata"></video><svg class="mg-ring" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48"/></svg></div>'}
 function loadCircles(root){
