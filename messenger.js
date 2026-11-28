@@ -72,7 +72,7 @@ const voiceURLCache=new Map();
 const cur=()=>C.find(c=>c.id===sel);
 const nm=c=>c.m.length>2?(c.title||c.m.filter(x=>x!==ME).join(', ')):(c.m.filter(x=>x!==ME).join(', ')||c.title||'Новый чат');
 const last=c=>c.msgs[c.msgs.length-1];
-const tx=m=>m.x||(m.f?(m.f.voice?'🎙️ Голосовое сообщение':'📎 '+m.f.n):'');
+const tx=m=>m.stk?'Стикер':(m.x||(m.f?(m.f.voice?'🎙️ Голосовое сообщение':'📎 '+m.f.n):''));
 const hits=c=>{const ql=cq.toLowerCase(),r=[];if(sOpen&&ql)c.msgs.forEach((m,i)=>{if((m.x||'').toLowerCase().includes(ql))r.push(i)});return r};
  const RD=JSON.parse(localStorage.getItem('mgr')||'{}');
 let LIVE=0;
@@ -365,7 +365,7 @@ function rMsgs(keep){
       (me?'':avU(m.uid,m.w,1))+
       '<div class="mg-b'+(hit[mi]===i?' cur':'')+(m.f&&m.f.circle?' circ':'')+'"'+(m.id?' data-mid="'+m.id+'"':'')+'>'+
       (!me?'<em style="color:'+col(m.w)+'">'+esc(m.w)+'</em>'+(FI[m.uid]?'<span class="fio">'+esc(FI[m.uid])+'</span>':''):'')+
-      (m.rt?quote(m.rt):'')+(m.poll?pollHTML(m):(m.x?'<p>'+hl(m.x,hq)+'</p>':''))+
+      (m.rt?quote(m.rt):'')+(m.stk?'<img class="mg-stk" src="'+esc(m.stk)+'" alt="">':'')+(m.poll?pollHTML(m):(m.x?'<p>'+hl(m.x,hq)+'</p>':''))+
       (m.f?(m.f.voice?voicePlayerHTML(m.f.p||''):m.f.circle?circleHTML(m.f.p||''):'<div class="mg-f"'+(m.f.p?' data-fp="'+esc(m.f.p)+'" style="cursor:pointer"':'')+'>'+ic('clip')+'<span>'+esc(m.f.n)+'</span><small>'+m.f.s+'</small></div>'):'')+
       '<small>'+(m.pin?'📌 ':'')+dm(m.t)+' в '+hm(m.t)+'</small></div>'+
       (me?avU(m.uid,m.w,1):'')+'</div>';
@@ -382,7 +382,7 @@ function rFoot(){
   if(!c){f.innerHTML='';f.hidden=true;return}
   f.hidden=false;
   const dis=c.sys?' disabled':'';
-  f.innerHTML=(eOpen?'<div class="mg-em2">'+EM.map(e=>'<button data-e="'+e+'">'+e+'</button>').join('')+'</div>':'')+
+  f.innerHTML=(eOpen?emPanel():'')+
    (voiceState==='recording'?'<div class="mg-vrec">'+(voiceKind==='video'?'<video id="mgvlive" class="mg-circ" muted playsinline autoplay></video>':'')+'<span class="dot"></span><span>Идёт запись</span><b id="mgvtimer">'+voiceClock()+'</b><button class="stop" id="mgstop">Стоп</button><button id="mgvcancel">Отмена</button></div>':'')+
    (voiceState==='processing'?'<div class="mg-vrec">Обрабатываем запись…</div>':'')+
    (voiceState==='preview'?'<div class="mg-vpreview">'+(voiceKind==='video'?'<video class="mg-circ" src="'+esc(voicePreviewUrl)+'" autoplay loop muted playsinline onclick="this.muted=!this.muted"></video>':'<audio controls src="'+esc(voicePreviewUrl)+'"></audio>')+'<button class="primary" id="mgvsend">Отправить</button><button id="mgvcancel">Удалить</button></div>':'')+
@@ -707,7 +707,7 @@ const tr=m=>/Invalid login/i.test(m)?'Неверная почта или пар�
 function toast(t){let d=$('#mgtoast');if(!d){d=document.createElement('div');d.id='mgtoast';d.style.cssText='position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:#34404e;color:#fff;padding:12px 20px;border-radius:16px;z-index:60;font-size:13px;max-width:90vw';document.body.appendChild(d)}d.textContent=t;d.hidden=false;clearTimeout(d._t);d._t=setTimeout(()=>d.hidden=true,3500)}
 const setName=(id,n)=>{n=n||'Участник';let k=n,i=2;while(Object.entries(nmap).some(([u,v])=>v===k&&u!==id))k=n+' '+i++;nmap[id]=k};
 const MESSAGE_PAGE_SIZE=100;
-const toM=r=>{const s=(r.body||'').startsWith('§sys§'),v=!!(r.file_name&&r.file_name.startsWith('voice-message.'));return{id:r.id,uid:r.user_id,rt:r.reply_to,cid:r.chat_id,pin:!!r.pinned,poll:r.poll||null,w:s?'sys':(nmap[r.user_id]||'Участник'),x:s?r.body.slice(5):(r.body||''),f:r.file_path?{n:v?'Голосовое сообщение':(r.file_name&&r.file_name.startsWith('circle-message.')?'Кружок':(r.file_name||'файл')),s:'',p:r.file_path,voice:v,circle:!!(r.file_name&&r.file_name.startsWith('circle-message.'))}:null,t:Date.parse(r.created_at),createdAt:r.created_at}};
+const toM=r=>{const s=(r.body||'').startsWith('§sys§'),v=!!(r.file_name&&r.file_name.startsWith('voice-message.'));return{id:r.id,uid:r.user_id,rt:r.reply_to,cid:r.chat_id,pin:!!r.pinned,poll:r.poll||null,w:s?'sys':(nmap[r.user_id]||'Участник'),x:s?r.body.slice(5):((r.body||'').startsWith('§stk§')?'':(r.body||'')),stk:(r.body||'').startsWith('§stk§https://res.cloudinary.com/z8gpeqex/')?r.body.slice(5):'',f:r.file_path?{n:v?'Голосовое сообщение':(r.file_name&&r.file_name.startsWith('circle-message.')?'Кружок':(r.file_name||'файл')),s:'',p:r.file_path,voice:v,circle:!!(r.file_name&&r.file_name.startsWith('circle-message.'))}:null,t:Date.parse(r.created_at),createdAt:r.created_at}};
 async function loadAll(){
   const since=new Date(Date.now()-30*864e5).toISOString();
   const [a,b]=await Promise.all([
@@ -887,7 +887,7 @@ function showPop(b){
   const e=b.querySelector('.mg-b[data-mid="'+ma+'"]'),m=findMsg(ma);
   if(!e||!m){ma='';return}
   const mine=m.uid===me.id,p=document.createElement('div');p.className='mg-pop';
-  p.innerHTML='<button data-reply="'+m.id+'">'+ic('reply')+'Ответить</button><button data-copy="'+m.id+'">'+ic('copy')+'Скопировать</button><button data-pin="'+m.id+'">'+ic('pin')+(m.pin?'Открепить':'Закрепить')+'</button>'+(mine?'<button class="rd" data-del="'+m.id+'">'+ic('trash')+'Удалить</button>':'');
+  p.innerHTML=(m.stk?'<button data-stsave="'+m.id+'">'+ic('star')+(SV.has(m.stk)?'Уже в стикерах':'В стикеры')+'</button>':'')+'<button data-reply="'+m.id+'">'+ic('reply')+'Ответить</button><button data-copy="'+m.id+'">'+ic('copy')+'Скопировать</button><button data-pin="'+m.id+'">'+ic('pin')+(m.pin?'Открепить':'Закрепить')+'</button>'+(mine?'<button class="rd" data-del="'+m.id+'">'+ic('trash')+'Удалить</button>':'');
   b.appendChild(p);
   let l=e.offsetLeft+(mine?e.offsetWidth-p.offsetWidth:0);
   l=Math.max(8,Math.min(l,b.clientWidth-p.offsetWidth-8));
@@ -1443,7 +1443,7 @@ async function boot0(){
   if(!me){if(ch){sb.removeChannel(ch);ch=null}C.splice(0);sel=null;LIVE=0;badge();setMyAva();authView();return}
   au.hidden=true;au.innerHTML='';$('#mgb').hidden=true;
   if(me.user_metadata&&me.user_metadata.fio){const rf=await sb.rpc('set_fio',{p_fio:me.user_metadata.fio});if(rf.error)toast('ФИО не сохранилось: '+rf.error.message)}
-  await loadAll();LIVE=1;setMyAva();touch();yariStatus();if(me.user_metadata&&me.user_metadata.fio)sb.rpc('set_fio',{p_fio:me.user_metadata.fio});
+  await loadAll();loadSk();LIVE=1;setMyAva();touch();yariStatus();if(me.user_metadata&&me.user_metadata.fio)sb.rpc('set_fio',{p_fio:me.user_metadata.fio});
   if(!C.some(z=>z.id===sel))sel=null;
   $('#mgb').hidden=false;
   const code=sessionStorage.getItem('mj');
@@ -1478,6 +1478,84 @@ try{const ys=await Promise.race([yb.auth.getSession(),new Promise(r=>setTimeout(
 };
 lib.onerror=()=>{$('#mgb').hidden=true;au.hidden=false;au.textContent='Не удалось загрузить Supabase. Проверь интернет и обнови страницу.'};
 document.head.appendChild(lib);
+ /* ===== СТИКЕРЫ ===== */
+var SKC='z8gpeqex',SKP='blog_media',ET='e',SK=[],SV=new Set();
+Object.assign(PA,{star:'M12 4l2.5 5 5.5.8-4 3.9.9 5.5-4.9-2.6-4.9 2.6.9-5.5-4-3.9 5.5-.8z'});
+const skcss=document.createElement('style');
+skcss.textContent=`
+.mg-et{display:flex;gap:6px;margin-bottom:8px}
+.mg-et button{height:32px;padding:0 14px;border-radius:16px;font-weight:600;font-size:13px;color:#8e959c;background:rgba(128,128,128,.12)}
+.mg-et button.on{background:#8774e1;color:#fff}
+.mg-sk{display:grid;grid-template-columns:repeat(auto-fill,minmax(74px,1fr));gap:8px;max-height:220px;overflow-y:auto;margin-bottom:8px}
+.mg-skt,.mg-skp{position:relative;aspect-ratio:1;border-radius:12px;display:grid;place-items:center;background:rgba(128,128,128,.1)}
+.mg-skp{border:2px dashed #8774e1;color:#8774e1;font-size:34px;font-weight:300;cursor:pointer}
+.mg-skt img{width:100%;height:100%;object-fit:contain;padding:4px;cursor:pointer}
+.mg-skt button{position:absolute;top:2px;right:2px;width:20px;height:20px;border-radius:50%;background:rgba(0,0,0,.55);color:#fff;font-size:13px;line-height:1;display:grid;place-items:center}
+.mg-skh{font-size:12px;color:#8e959c;margin:0 0 8px}
+.mg-stk{display:block;max-width:180px;max-height:180px;margin-bottom:4px}
+.mg .mg-b:has(>.mg-stk){background:none !important;padding:0 !important;box-shadow:none !important;border:0 !important;color:#8e959c !important}`;
+document.head.appendChild(skcss);
+
+function emPanel(){
+  const tb='<div class="mg-et"><button data-et="e" class="'+(ET==='e'?'on':'')+'">Эмодзи</button><button data-et="s" class="'+(ET==='s'?'on':'')+'">Стикеры</button></div>';
+  if(ET==='e')return '<div class="mg-emw">'+tb+'<div class="mg-em2">'+EM.map(e=>'<button data-e="'+e+'">'+e+'</button>').join('')+'</div></div>';
+  return '<div class="mg-emw">'+tb+'<div class="mg-sk"><label class="mg-skp" title="Добавить стикер">+<input type="file" id="mgskf" accept="image/png,image/webp" hidden></label>'+
+    SK.map(s=>'<div class="mg-skt"><img src="'+esc(s.url)+'" alt="" data-sk="'+esc(s.url)+'"><button data-skdel="'+s.id+'" aria-label="Убрать">×</button></div>').join('')+'</div>'+
+    (SK.length?'':'<div class="mg-skh">Нажми плюс, чтобы добавить свой стикер. PNG или WebP с прозрачным фоном, до 300 КБ.</div>')+'</div>';
+}
+async function loadSk(){
+  const r=await sb.from('stickers').select('id,url').order('created_at',{ascending:false});
+  if(r.error)return;
+  SK=r.data||[];SV=new Set(SK.map(x=>x.url));
+  if(eOpen)rFoot();
+}
+async function sendSk(url){
+  const c=cur();if(!c||c.sys||c.bot)return;
+  eOpen=0;rFoot();
+  const r=await sb.from('messages').insert({chat_id:c.id,body:'§stk§'+url}).select().single();
+  if(r.error){toast('Не отправилось: '+r.error.message);return}
+  push(r.data);
+}
+async function addSk(f){
+  if(!f)return;
+  if(!/^image\/(png|webp)$/.test(f.type)){toast('Нужен PNG или WebP с прозрачным фоном');return}
+  if(f.size>2*1024*1024){toast('Файл больше 2 МБ');return}
+  if(SK.length>=60){toast('Максимум 60 стикеров');return}
+  try{
+    const bm=await createImageBitmap(f),k=Math.min(1,512/Math.max(bm.width,bm.height));
+    const cv=document.createElement('canvas');cv.width=Math.round(bm.width*k);cv.height=Math.round(bm.height*k);
+    cv.getContext('2d').drawImage(bm,0,0,cv.width,cv.height);
+    const blob=await new Promise(r=>cv.toBlob(r,'image/webp',.92));
+    if(!blob)throw new Error('не удалось обработать картинку');
+    if(blob.size>300*1024){toast('Стикер больше 300 КБ. Возьми картинку попроще или поменьше');return}
+    const fd=new FormData();fd.append('file',blob,'sticker.'+(blob.type.includes('webp')?'webp':'png'));fd.append('upload_preset',SKP);
+    const r=await fetch('https://api.cloudinary.com/v1_1/'+SKC+'/image/upload',{method:'POST',body:fd});
+    const j=await r.json().catch(()=>({}));
+    if(!r.ok||!j.secure_url)throw new Error((j.error&&j.error.message)||'ошибка загрузки');
+    const ins=await sb.from('stickers').insert({url:j.secure_url});
+    if(ins.error)throw new Error(ins.error.message);
+    await loadSk();toast('Стикер добавлен');
+  }catch(e){toast('Не получилось: '+(e.message||'ошибка'))}
+}
+async function saveSk(id){
+  const m=findMsg(id);if(!m||!m.stk)return;
+  ma='';
+  if(SV.has(m.stk)){rMsgs(1);toast('Этот стикер уже у тебя');return}
+  const r=await sb.from('stickers').insert({url:m.stk});
+  if(r.error){rMsgs(1);toast('Не получилось: '+r.error.message);return}
+  await loadSk();rMsgs(1);toast('Стикер сохранён');
+}
+sec.addEventListener('click',async e=>{
+  const b=k=>e.target.closest(k);let x;
+  if((x=b('[data-et]'))){ET=x.dataset.et;rFoot()}
+  else if((x=b('[data-skdel]'))){await sb.from('stickers').delete().eq('id',x.dataset.skdel);await loadSk()}
+  else if((x=b('[data-sk]')))sendSk(x.dataset.sk);
+  else if((x=b('[data-stsave]')))saveSk(x.dataset.stsave);
+});
+sec.addEventListener('change',e=>{
+  if(e.target.id!=='mgskf')return;
+  const f=e.target.files[0];e.target.value='';addSk(f);
+});
 window.rMsg=()=>{if(sb)boot();else{$('#mgb').hidden=true;au.hidden=false;au.textContent='Загрузка…'}};
  window.MG={async dm(u){const r=await sb.rpc('create_dm',{p_user:u});if(r.error){toast('Не получилось: '+r.error.message);return}await loadAll();tab='c';q='';open(r.data.id);MS.show('msg')}};
 })();
