@@ -363,7 +363,7 @@ function rMsgs(keep){
     const me=m.w===ME;
     h+='<div class="mg-r1'+(me?' me':'')+'">'+
       (me?'':avU(m.uid,m.w,1))+
-      '<div class="mg-b'+(hit[mi]===i?' cur':'')+'"'+(m.id?' data-mid="'+m.id+'"':'')+'>'+
+      '<div class="mg-b'+(hit[mi]===i?' cur':'')+(m.f&&m.f.circle?' circ':'')+'"'+(m.id?' data-mid="'+m.id+'"':'')+'>'+
       (!me?'<em style="color:'+col(m.w)+'">'+esc(m.w)+'</em>'+(FI[m.uid]?'<span class="fio">'+esc(FI[m.uid])+'</span>':''):'')+
       (m.rt?quote(m.rt):'')+(m.poll?pollHTML(m):(m.x?'<p>'+hl(m.x,hq)+'</p>':''))+
       (m.f?(m.f.voice?voicePlayerHTML(m.f.p||''):m.f.circle?circleHTML(m.f.p||''):'<div class="mg-f"'+(m.f.p?' data-fp="'+esc(m.f.p)+'" style="cursor:pointer"':'')+'>'+ic('clip')+'<span>'+esc(m.f.n)+'</span><small>'+m.f.s+'</small></div>'):'')+
@@ -1271,7 +1271,13 @@ async function sendVoice(){
 /* ===== КРУЖКИ И ГОЛОСОВЫЕ ПО УДЕРЖАНИЮ ===== */
 const circStyle=document.createElement('style');
 circStyle.textContent=`
-.mg-mic{touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.mg .mg-b.circ,.mg:not(.z) .mg-b.circ,.mg:not(.z) .me .mg-b.circ,.mg.fs .me .mg-b.circ{background:none !important;padding:0 !important;box-shadow:none !important}
+.mg-b.circ small{padding:0 6px}
+.mg-circw{transition:width .25s,height .25s}
+.mg-circw.pl{width:270px;height:270px}
+.mg-ring{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg);pointer-events:none}
+.mg-ring circle{fill:none;stroke:#8774e1;stroke-width:3;stroke-linecap:round;stroke-dasharray:302;stroke-dashoffset:302}
+.mg-mic{touch-action:none;
 .mg-circ{width:140px;height:140px;border-radius:50%;object-fit:cover;background:#000;flex:none}
 #mgvlive{transform:scaleX(-1)}
 .mg-circw{position:relative;width:200px;height:200px;border-radius:50%;overflow:hidden;background:#000;margin-top:6px;cursor:pointer}
@@ -1279,7 +1285,7 @@ circStyle.textContent=`
 .mg-circw:not(.pl)::after{content:'▶';position:absolute;inset:0;display:grid;place-items:center;color:#fff;font-size:34px;background:rgba(0,0,0,.25)}`;
 document.head.appendChild(circStyle);
 
-function circleHTML(path){return '<div class="mg-circw" data-cp="'+esc(path||'')+'"><video class="mg-circv" playsinline preload="metadata"></video></div>'}
+function circleHTML(path){return '<div class="mg-circw" data-cp="'+esc(path||'')+'"><video class="mg-circv" playsinline preload="metadata"></video><svg class="mg-ring" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48"/></svg></div>'}
 function loadCircles(root){
   root.querySelectorAll('.mg-circw[data-cp]').forEach(async w=>{
     const path=w.dataset.cp,v=w.querySelector('video');
@@ -1293,7 +1299,10 @@ function loadCircles(root){
         cached={url:r.data.signedUrl,expires:Date.now()+3500000};voiceURLCache.set(path,cached);
       }
       if(w.isConnected){
-        v.addEventListener('ended',()=>{w.classList.remove('pl');v.currentTime=0});
+        const rg=w.querySelector('.mg-ring circle');
+v.addEventListener('loadedmetadata',()=>{if(v.duration===Infinity){v.currentTime=1e7;v.addEventListener('timeupdate',()=>{v.currentTime=0},{once:true})}});
+v.addEventListener('timeupdate',()=>{if(rg&&isFinite(v.duration)&&v.duration>0)rg.style.strokeDashoffset=302*(1-v.currentTime/v.duration)});
+v.addEventListener('ended',()=>{w.classList.remove('pl');v.currentTime=0;if(rg)rg.style.strokeDashoffset=302});
         v.src=cached.url+'#t=0.1';
       }
     }catch(e){delete w.dataset.loading}
