@@ -488,7 +488,7 @@ sec.addEventListener('click',e=>{
   else if(b('#mgmic')){}
   else if(b('#mgstop'))stopVoice();
   else if(b('#mgvcancel'))cancelVoice();
-  else if(b('#mgvsend'))sendVoice();
+  else if(b('#mgvsend'))sendMedia();
   else if((x=b('[data-e]'))){dr+=x.dataset.e;rFoot();const i=$('#mgi');if(i)i.focus()}
   else if((x=b('[data-fp]')))openFile(x.dataset.fp);
   else if(b('[data-inv]')){const c=cur();if(c)copy(link(c))}
